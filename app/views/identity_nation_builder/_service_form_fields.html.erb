@@ -1,0 +1,12 @@
+<div class="form-group">
+  <%= label_tag "services[nation_builder]" do %>
+    <p>Push this list to NationBuilder Event RSVP</p>
+    <%= check_box_tag "services[nation_builder]", "on", false, {:id => "services_nation_builder", :class => "js-toggle-select"} %>
+    Yes
+  <% end %>
+  <div class="js-toggle-input" style="display: none;">
+    <%= label_tag "nation_builder[event_id]", 'Event ID: ' %>
+    <%= text_field_tag "nation_builder[event_id]", nil, {:placeholder => 'Event ID'} %>
+  </div>
+  <hr />
+</div>
