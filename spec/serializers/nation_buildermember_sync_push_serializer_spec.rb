@@ -2,12 +2,13 @@ describe IdentityNationBuilder::NationBuilderMemberSyncPushSerializer do
   context 'serialize' do
     before(:each) do
       Member.all.destroy_all
-      @member = Member.create!(name: 'Freddy Kruger', email: 'nosleeptill@elmstreet.com')
-      list = List.create(name: 'test list')
-      ListMember.create(list: list, member: @member)
-      Member.create!(name: 'Miles Davis', email: 'jazz@vibes.com')
-      Member.create!(name: 'Yoko Ono')
-      @batch_members = Member.all.with_email.in_batches.first
+
+      @member = FactoryBot.create(:member_with_mobile)
+      list = FactoryBot.create(:list)
+      FactoryBot.create(:list_member, list: list, member: @member)
+      FactoryBot.create(:member_with_mobile)
+
+      @batch_members = Member.all.in_batches.first
     end
 
     it 'returns valid object' do

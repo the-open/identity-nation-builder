@@ -10,7 +10,7 @@ module IdentityNationBuilder
     end
 
     def self.tag(members, event_id, tag)
-      list_id = create_list(tag)['id']
+      list_id = find_or_create_list(tag)['id']
       member_ids = members.map do |member|
         find_or_create_person(member)['id']
       end
@@ -37,16 +37,25 @@ module IdentityNationBuilder
       api(:events, :rsvp_create, { id: event_id, site_slug: Settings.nation_builder.site_slug, rsvp: { person_id: person['id'] } })
     end
 
+    def self.find_or_create_list(tag)
+      matched_lists = lists.select {|list| list["slug"] == tag }
+      matched_lists.any? ? matched_lists.first : create_list(tag)
+    end
+
+    def self.lists
+      api(:lists, :index, { site_slug: Settings.nation_builder.site_slug })['results']
+    end
+
     def self.create_list(tag)
       api(:lists, :create, { site_slug: Settings.nation_builder.site_slug, list: { name: tag, slug: tag, author_id: Settings.nation_builder.author_id } })['list_resource']
     end
 
     def self.add_people_list(list_id, member_ids)
-      api(:lists, :add_people, { site_slug: Settings.nation_builder.site_slug, list_id: list_id, people_ids: member_ids })['list_resource']
+      api(:lists, :add_people, { site_slug: Settings.nation_builder.site_slug, list_id: list_id, people_ids: member_ids })
     end
 
     def self.tag_list(list_id, tag)
-      api(:lists, :tag, { site_slug: Settings.nation_builder.site_slug, list_id: list_id, tag_name: tag })
+      api(:lists, :add_tag, { site_slug: Settings.nation_builder.site_slug, list_id: list_id, tag: tag })
     end
 
     def self.api(*args)
