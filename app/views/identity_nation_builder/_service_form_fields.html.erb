@@ -5,8 +5,33 @@
     Yes
   <% end %>
   <div class="js-toggle-input" style="display: none;">
-    <%= label_tag "nation_builder[event_id]", 'Event ID: ' %>
-    <%= text_field_tag "nation_builder[event_id]", nil, {:placeholder => 'Event ID'} %>
+    <%= label_tag "nation_builder[sync_type]", 'Sync Type: ' %>
+    <%= select_tag "nation_builder[sync_type]", options_for_select(IdentityNationBuilder::ApplicationHelper.push_types_for_select) %>
+    <br/>
+    <div class="event_rsvp_container">
+      <%= label_tag "nation_builder[event_id]", 'Event ID: ' %>
+      <%= select_tag "nation_builder[event_id]", options_for_select(IdentityNationBuilder::ApplicationHelper.events_for_select) %>
+    </div>
+    <div class="tag_container">
+      <%= label_tag "nation_builder[tag]", 'Tag Name: ' %>
+      <%= text_field_tag "nation_builder[tag]", nil, {:placeholder => 'Tag Name'} %>
+    </div>
   </div>
   <hr />
 </div>
+<script>
+  $('#nation_builder_sync_type').on('change',function(){
+    show_selected_sync_type()
+  });
+  function show_selected_sync_type(){
+    if($("#nation_builder_sync_type").val()==="rsvp"){
+      $(".event_rsvp_container").show()
+      $(".tag_container").hide()
+    }
+    else{
+      $(".event_rsvp_container").hide()
+      $(".tag_container").show()
+    }
+  }
+  show_selected_sync_type()
+</script>
