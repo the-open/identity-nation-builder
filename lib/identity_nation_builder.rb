@@ -17,13 +17,11 @@ module IdentityNationBuilder
     begin
       members.in_batches(of: BATCH_AMOUNT).each_with_index do |batch_members, batch_index|
         sync_type = JSON.parse(external_system_params)['sync_type']
-        event_id = JSON.parse(external_system_params)['event_id']
-        tag = JSON.parse(external_system_params)['tag']
         rows = ActiveModel::Serializer::CollectionSerializer.new(
           batch_members,
           serializer: NationBuilderMemberSyncPushSerializer
         ).as_json
-        write_result_count = IdentityNationBuilder::API.send(sync_type, rows, event_id, tag)
+        write_result_count = IdentityNationBuilder::API.send(sync_type, rows, sync_type_item(external_system_params))
 
         yield batch_index, write_result_count
       end
@@ -42,6 +40,6 @@ module IdentityNationBuilder
   end
 
   def self.description(external_system_params, contact_campaign_name)
-    "#{SYSTEM_NAME.titleize} - #{JSON.parse(external_system_params)['sync_type'].titleize}: ##{sync_type_item(external_system_params)} (#{CONTACT_TYPE[JSON.parse(external_system_params)['sync_type'].to_sym]})"
+    "#{SYSTEM_NAME.titleize} - #{JSON.parse(external_system_params)['sync_type'].titleize}: ##{sync_type_item(external_system_params)} (#{CONTACT_TYPE[JSON.parse(external_system_params)['sync_type']]})"
   end
 end

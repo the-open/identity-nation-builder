@@ -26,11 +26,15 @@
   function show_selected_sync_type(){
     if($("#nation_builder_sync_type").val()==="rsvp"){
       $(".event_rsvp_container").show()
+      $(".event_rsvp_container select").prop('disabled', false)
       $(".tag_container").hide()
+      $(".tag_container select").prop('disabled', true)
     }
     else{
       $(".event_rsvp_container").hide()
+      $(".event_rsvp_container select").prop('disabled', true)
       $(".tag_container").show()
+      $(".tag_container input").prop('disabled', false)
     }
   }
   show_selected_sync_type()

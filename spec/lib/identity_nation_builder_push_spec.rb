@@ -1,6 +1,30 @@
 require 'rails_helper'
 
 describe IdentityNationBuilder do
+
+  context '#sync_type_item' do
+    context 'with valid parameters' do
+      context 'with rsvp' do
+        it 'returns correct sync item type' do
+          external_system_params = JSON.generate({'sync_type' => 'rsvp', 'event_id' => 1})
+          expect(IdentityNationBuilder.sync_type_item(external_system_params)).to eq(1)
+        end
+      end
+      context 'with tag' do
+        it 'returns correct sync item type' do
+          external_system_params = JSON.generate({'sync_type' => 'tag', 'tag' => 'test_tag'})
+          expect(IdentityNationBuilder.sync_type_item(external_system_params)).to eq('test_tag')
+        end
+      end
+    end
+    context 'with invalid parameters' do
+      it 'returns no sync item type' do
+        external_system_params = JSON.generate({'sync_type' => 'yada'})
+        expect(IdentityNationBuilder.sync_type_item(external_system_params)).to be nil
+      end
+    end
+  end
+
   context '#push' do
     before(:each) do
       @sync_id = 1
@@ -42,7 +66,7 @@ describe IdentityNationBuilder do
       context 'with valid parameters' do
         it 'yeilds write_result_count' do
           external_system_params = JSON.generate({'sync_type' => 'rsvp', 'event_id' => 1})
-          expect(IdentityNationBuilder::API).to receive(:rsvp).exactly(1).times.with(anything, anything, anything) { 2 }
+          expect(IdentityNationBuilder::API).to receive(:rsvp).exactly(1).times.with(anything, anything) { 2 }
           IdentityNationBuilder.push_in_batches(1, @members, external_system_params) do |batch_index, write_result_count|
             expect(write_result_count).to eq(2)
           end
@@ -53,7 +77,7 @@ describe IdentityNationBuilder do
       context 'with valid parameters' do
         it 'yeilds write_result_count' do
           external_system_params = JSON.generate({'sync_type' => 'tag', 'tag' => 'test_tag'})
-          expect(IdentityNationBuilder::API).to receive(:tag).exactly(1).times.with(anything, anything, anything) { 2 }
+          expect(IdentityNationBuilder::API).to receive(:tag).exactly(1).times.with(anything, anything) { 2 }
           IdentityNationBuilder.push_in_batches(1, @members, external_system_params) do |batch_index, write_result_count|
             expect(write_result_count).to eq(2)
           end

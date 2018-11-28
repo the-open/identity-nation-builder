@@ -2,14 +2,14 @@ require 'nationbuilder'
 
 module IdentityNationBuilder
   class API
-    def self.rsvp(members, event_id, tag)
+    def self.rsvp(members, event_id)
       member_ids = members.map do |member|
         rsvp_person(event_id, find_or_create_person(member))
       end
       member_ids.length
     end
 
-    def self.tag(members, event_id, tag)
+    def self.tag(members, tag)
       list_id = find_or_create_list(tag)['id']
       member_ids = members.map do |member|
         find_or_create_person(member)['id']
