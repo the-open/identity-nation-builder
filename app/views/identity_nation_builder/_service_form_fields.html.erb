@@ -1,6 +1,6 @@
 <div class="form-group">
   <%= label_tag "services[nation_builder]" do %>
-    <p>Push this list to NationBuilder Event RSVP</p>
+    <p>Push this list to NationBuilder <span class="push_to_list_type">Event RSVP</span></p>
     <%= check_box_tag "services[nation_builder]", "on", false, {:id => "services_nation_builder", :class => "js-toggle-select"} %>
     Yes
   <% end %>
@@ -25,6 +25,7 @@
   });
   function show_selected_sync_type(){
     if($("#nation_builder_sync_type").val()==="rsvp"){
+      $(".push_to_list_type").html("Event RSVP")
       $(".event_rsvp_container").show()
       $(".event_rsvp_container select").prop('disabled', false)
       $(".tag_container").hide()
@@ -32,6 +33,7 @@
     }
     else{
       $(".event_rsvp_container").hide()
+      $(".push_to_list_type").html("Tagged List")
       $(".event_rsvp_container select").prop('disabled', true)
       $(".tag_container").show()
       $(".tag_container input").prop('disabled', false)
