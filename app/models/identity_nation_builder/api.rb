@@ -69,7 +69,7 @@ module IdentityNationBuilder
         raise
       rescue NationBuilder::ClientError => e
         payload = JSON.parse(e.message)
-        raise unless payload_has_a_no_match_code?(payload)
+        raise unless payload_has_a_no_match_code?(payload) || attempt_to_rsvp_person_twice(args[1], e.message)
       end
       log_api_call(started_at, payload, *args)
       payload
@@ -81,6 +81,10 @@ module IdentityNationBuilder
 
     def self.payload_has_a_no_match_code?(payload)
       payload && payload['code'] == 'no_matches'
+    end
+
+    def self.attempt_to_rsvp_person_twice(api_call, error)
+      api_call == :rsvp_create && error.include?("signup_id has already been taken")
     end
 
     def self.raise_if_empty_payload(payload)

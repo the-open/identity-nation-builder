@@ -85,4 +85,16 @@ describe IdentityNationBuilder do
       end
     end
   end
+
+  describe '#attempt_to_rsvp_person_twice' do
+    it 'will not raise error on rsvp_create with signup_id taken' do
+      expect(IdentityNationBuilder::API.attempt_to_rsvp_person_twice(:rsvp_create, "signup_id has already been taken")).to eq(true)
+    end
+    it 'will raise error on rsvp create with different error' do
+      expect(IdentityNationBuilder::API.attempt_to_rsvp_person_twice(:rsvp_create, "another error")).to eq(false)
+    end
+    it 'will raise error on different api call' do
+      expect(IdentityNationBuilder::API.attempt_to_rsvp_person_twice(:someotherapicall, "signup_id has already been taken")).to eq(false)
+    end
+  end
 end
