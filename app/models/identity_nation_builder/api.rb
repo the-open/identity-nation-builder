@@ -2,14 +2,14 @@ require 'nationbuilder'
 
 module IdentityNationBuilder
   class API
-    def self.rsvp(members, event_id)
+    def self.rsvp(site_slug, members, event_id)
       member_ids = members.map do |member|
-        rsvp_person(event_id, find_or_create_person(member))
+        rsvp_person(site_slug, event_id, find_or_create_person(member))
       end
       member_ids.length
     end
 
-    def self.tag(members, tag)
+    def self.tag(site_slug, members, tag)
       list_id = find_or_create_list(tag)['id']
       member_ids = members.map do |member|
         find_or_create_person(member)['id']
@@ -19,43 +19,78 @@ module IdentityNationBuilder
       member_ids.length
     end
 
-    def self.events
-      get_upcoming_events
+    def self.sites
+      api(:sites, :index, { per_page: 100 })['results']
+    end
+
+    def self.sites_events
+      site_slugs = sites.map { |site| site['slug'] }
+      all_upcoming_events(site_slugs)
     end
 
     private
 
-    def self.get_upcoming_events
-      api(:events, :index, { site_slug: Settings.nation_builder.site_slug, starting: Time.now() })['results']
+    def self.all_upcoming_events(site_slugs)
+      $event_results = []
+      site_slugs.each do |slug|
+        $page = NationBuilder::Paginator.new(get_api_client, events(slug))
+        page_results = $page.body['results'].map { |result| result['site_slug'] = slug; result }
+        $event_results = $event_results + page_results
+        loop do
+          break unless $page.next?
+          $page = $page.next
+          page_results = $page.body['results'].map { |result| result['site_slug'] = slug; result }
+          $event_results = $event_results + page_results
+        end
+      end
+      $event_results
+    end
+
+    def self.events(slug)
+      api(:events, :index, { site_slug: slug, starting: Time.now(), per_page: 100 })
     end
 
     def self.find_or_create_person(member)
       api(:people, :add, { person: member })['person']
     end
 
-    def self.rsvp_person(event_id, person)
-      api(:events, :rsvp_create, { id: event_id, site_slug: Settings.nation_builder.site_slug, rsvp: { person_id: person['id'] } })
+    def self.rsvp_person(site_slug, event_id, person)
+      api(:events, :rsvp_create, { id: event_id, site_slug: site_slug, rsvp: { person_id: person['id'] } })
     end
 
     def self.find_or_create_list(tag)
-      matched_lists = lists.select {|list| list["slug"] == tag }
+      matched_lists = all_lists.select {|list| list["slug"] == tag }
       matched_lists.any? ? matched_lists.first : create_list(tag)
     end
 
+    def self.all_lists
+      $list_results = []
+      $page = NationBuilder::Paginator.new(get_api_client, lists)
+      page_results = $page.body['results']
+      $list_results = $list_results + page_results
+      loop do
+        break unless $page.next?
+        $page = $page.next
+        page_results = $page.body['results']
+        $list_results = $list_results + page_results
+      end
+      $list_results
+    end
+
     def self.lists
-      api(:lists, :index, { site_slug: Settings.nation_builder.site_slug })['results']
+      api(:lists, :index, { per_page: 100 })
     end
 
     def self.create_list(tag)
-      api(:lists, :create, { site_slug: Settings.nation_builder.site_slug, list: { name: tag, slug: tag, author_id: Settings.nation_builder.author_id } })['list_resource']
+      api(:lists, :create, { list: { name: tag, slug: tag, author_id: Settings.nation_builder.author_id } })['list_resource']
     end
 
     def self.add_people_list(list_id, member_ids)
-      api(:lists, :add_people, { site_slug: Settings.nation_builder.site_slug, list_id: list_id, people_ids: member_ids })
+      api(:lists, :add_people, { list_id: list_id, people_ids: member_ids })
     end
 
     def self.tag_list(list_id, tag)
-      api(:lists, :add_tag, { site_slug: Settings.nation_builder.site_slug, list_id: list_id, tag: tag })
+      api(:lists, :add_tag, { list_id: list_id, tag: tag })
     end
 
     def self.api(*args)

@@ -9,8 +9,11 @@
     <%= select_tag "nation_builder[sync_type]", options_for_select(IdentityNationBuilder::ApplicationHelper.push_types_for_select) %>
     <br/>
     <div class="event_rsvp_container">
+      <%= label_tag "nation_builder[site_slug]", 'Site: ' %>
+      <%= select_tag "nation_builder[site_slug]", options_for_select(IdentityNationBuilder::ApplicationHelper.sites_for_select) %>
+      <br/>
       <%= label_tag "nation_builder[event_id]", 'Event ID: ' %>
-      <%= select_tag "nation_builder[event_id]", options_for_select(IdentityNationBuilder::ApplicationHelper.events_for_select) %>
+      <%= select_tag "nation_builder[event_id]", options_for_select(IdentityNationBuilder::ApplicationHelper.events_for_select), { style: 'width:100%;' } %>
     </div>
     <div class="tag_container">
       <%= label_tag "nation_builder[tag]", 'Tag Name: ' %>
@@ -20,24 +23,42 @@
   <hr />
 </div>
 <script>
-  $('#nation_builder_sync_type').on('change',function(){
+  //sync type switch
+  $("#nation_builder_sync_type").on("change",function(){
     show_selected_sync_type()
   });
   function show_selected_sync_type(){
     if($("#nation_builder_sync_type").val()==="rsvp"){
       $(".push_to_list_type").html("Event RSVP")
       $(".event_rsvp_container").show()
-      $(".event_rsvp_container select").prop('disabled', false)
+      $(".event_rsvp_container select").prop("disabled", false)
       $(".tag_container").hide()
-      $(".tag_container input").prop('disabled', true)
+      $(".tag_container input").prop("disabled", true)
     }
     else{
       $(".event_rsvp_container").hide()
       $(".push_to_list_type").html("Tagged List")
-      $(".event_rsvp_container select").prop('disabled', true)
+      $(".event_rsvp_container select").prop("disabled", true)
       $(".tag_container").show()
-      $(".tag_container input").prop('disabled', false)
+      $(".tag_container input").prop("disabled", false)
     }
   }
   show_selected_sync_type()
+
+  //site event switch
+  $("#nation_builder_site_slug").on("change",function(){
+    show_selected_event_id()
+  });
+  function show_selected_event_id(){
+    site_slug = $("#nation_builder_site_slug").val()
+    $("#nation_builder_event_id option.site_slug_"+site_slug).prop( "disabled", false ).css('display', 'block')
+    $("#nation_builder_event_id option").not(".site_slug_"+site_slug).prop( "disabled", true ).css('display', 'none')
+    if ($("#nation_builder_event_id option.site_slug_"+site_slug).length == 0){
+      $("#nation_builder_event_id").append('<option value="empty" class="empty">No Events Found...</option>')
+      $("#nation_builder_event_id").val("empty");
+    } else {
+      $("#nation_builder_event_id .empty").remove()
+    }
+  }
+  show_selected_event_id()
 </script>
