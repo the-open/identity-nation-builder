@@ -5,7 +5,7 @@ PATH
       active_model_serializers (~> 0.10.7)
       nationbuilder-rb
       pg (~> 0.18)
-      rails (~> 5.1.6)
+      rails
 
 GEM
   remote: https://rubygems.org/
@@ -218,7 +218,7 @@ DEPENDENCIES
   pry
   pry-byebug
   pry-rails
-  rails (~> 5.1.6)
+  rails
   rspec-mocks
   rspec-rails
   rubocop
