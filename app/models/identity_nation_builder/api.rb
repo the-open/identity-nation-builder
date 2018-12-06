@@ -11,10 +11,19 @@ module IdentityNationBuilder
 
     def self.tag(site_slug, members, tag)
       list_id = find_or_create_list(tag)['id']
+      people_ids_in_list = who_is_in_list(list_id)
+      initial_count = count_list(list_id)
       member_ids = members.map do |member|
         find_or_create_person(member)['id']
       end
-      add_people_list(list_id, member_ids)
+      member_ids_to_add = member_ids - people_ids_in_list
+      add_people_list(list_id, member_ids_to_add)
+      target_count = initial_count + member_ids_to_add.length
+      45.times do
+        sleep(120)
+        updated_count = count_list(list_id)
+        break if (updated_count.equal? target_count)
+      end
       tag_list(list_id, tag)
       member_ids.length
     end
@@ -83,6 +92,24 @@ module IdentityNationBuilder
 
     def self.create_list(tag)
       api(:lists, :create, { list: { name: tag, slug: tag, author_id: Settings.nation_builder.author_id } })['list_resource']
+    end
+
+    def self.who_is_in_list(list_id)
+      payload = api(:lists, :people, { id: list_id })
+      people = payload['results'].map do |person|
+        person[:id]
+      end
+      return people
+    end
+
+    def self.count_list(list_id)
+      begin
+        payload = api(:lists, :index)
+        result = payload['results'].detect{|key| key['id'] == list_id}
+        result['count']
+      rescue
+        return 0
+      end
     end
 
     def self.add_people_list(list_id, member_ids)
