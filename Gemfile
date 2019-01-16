@@ -4,7 +4,7 @@ gemspec
 gem 'rails'
 gem 'pg', '~> 0.18'
 gem 'active_model_serializers', '~> 0.10.7'
-gem 'nationbuilder-rb'
+gem 'nationbuilder-rb', '~> 1.6.1'
 gem 'sidekiq', '~> 5.1.1'
 gem 'sidekiq-batch'
 gem 'sidekiq-limit_fetch'
