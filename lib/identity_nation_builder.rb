@@ -48,6 +48,8 @@ module IdentityNationBuilder
   end
 
   def self.fetch_new_events
+    puts ">>> Nation Builder fetch_new_events running ..."
+
     starting_from = (DateTime.now() - 3.months)
     updated_events = IdentityNationBuilder::API.sites_events(starting_from)
 
@@ -59,13 +61,12 @@ module IdentityNationBuilder
         external_id: nb_event["id"]
       )
 
-      event_location = "#{nb_event['venue']['name']} - #{nb_event['venue']['address']['address1']} #{nb_event['venue']['address']['address2']} #{nb_event['venue']['address']['address3']}, #{nb_event['venue']['address']['city']}, #{nb_event['venue']['address']['state']}, #{nb_event['venue']['address']['country_code']}"
       event.update_attributes!(
         name: nb_event['name'],
         start_time: DateTime.parse(nb_event['start_time']),
         end_time: DateTime.parse(nb_event['end_time']),
         description: nb_event['intro'],
-        location: event_location,
+        location: event_address_full(nb_event),
         latitude: nb_event['venue']['address']['lat'],
         longitude: nb_event['venue']['address']['lng'],
         max_attendees: nb_event['capacity'],
@@ -73,7 +74,7 @@ module IdentityNationBuilder
         invite_only: !nb_event['rsvp_form']['allow_guests']
       )
 
-      self.delay.fetch_new_event_rsvps(event.id)
+      self.fetch_new_event_rsvps(event.id)
     end
 
     updated_events.size
@@ -110,5 +111,20 @@ module IdentityNationBuilder
         )
       end
     end
+  end
+
+  def self.event_address_full(nb_event)
+    event_location = ""
+    return event_location if nb_event['venue'].nil?
+    event_location += "#{nb_event['venue']['name']} - " unless nb_event['venue']['name'].blank?
+    venue_address = nb_event['venue']['address']
+    return event_location unless venue_address.nil?
+    event_location += "#{venue_address['address1']} " unless venue_address['address1'].blank?
+    event_location +="#{venue_address['address2']} " unless venue_address['address2'].blank?
+    event_location +="#{venue_address['address3']}, " unless venue_address['address3'].blank?
+    event_location +="#{venue_address['city']}, " unless venue_address['city'].blank?
+    event_location +="#{venue_address['state']}, " unless venue_address['state'].blank?
+    event_location +="#{venue_address['country_code']}" unless venue_address['country_code'].blank?
+    event_location
   end
 end
