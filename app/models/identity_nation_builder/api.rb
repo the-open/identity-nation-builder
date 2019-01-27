@@ -2,6 +2,13 @@ require 'nationbuilder'
 
 module IdentityNationBuilder
   class API
+    def self.clock
+      last_updated_at = Time.parse(Sidekiq.redis { |r| r.get 'nationbuilder:last_updated_at' } || '1970-01-01 00:00:00')
+      return unless last_updated_at < 5.minutes.ago
+      Sidekiq.redis { |r| r.set 'nationbuilder:sites', api(:sites, :index, { per_page: 100 })['results'].to_json}
+      Sidekiq.redis { |r| r.set 'nationbuilder:last_updated_at', DateTime.now }
+    end
+
     def self.rsvp(site_slug, members, event_id)
       member_ids = members.map do |member|
         rsvp_person(site_slug, event_id, find_or_create_person(member))
@@ -23,12 +30,22 @@ module IdentityNationBuilder
       api(:sites, :index, { per_page: 100 })['results']
     end
 
-    def self.sites_events(starting=DateTime.now())
-      site_slugs = sites.map { |site| site['slug'] }
-      all_events(site_slugs, starting)
+    def self.cached_sites
+      list_from_cache('nationbuilder:sites')
     end
 
-    private
+    def self.sites_events(starting=DateTime.now())
+      fetched_sites = sites
+      Sidekiq.redis { |r| r.set 'nationbuilder:sites', fetched_sites.to_json}
+      site_slugs = fetched_sites.map { |site| site['slug'] }
+      fetched_events = all_events(site_slugs, starting)
+      Sidekiq.redis { |r| r.set 'nationbuilder:sites_events', fetched_events.to_json}
+      fetched_events
+    end
+
+    def self.cached_sites_events
+      list_from_cache('nationbuilder:sites_events')
+    end
 
     def self.all_events(site_slugs, starting)
       $event_results = []
@@ -115,6 +132,8 @@ module IdentityNationBuilder
       api(:lists, :add_tag, { list_id: list_id, tag: tag })
     end
 
+    private
+
     def self.api(*args)
       args[2] = {} unless args.third
       args.third[:fire_webhooks] = false
@@ -155,6 +174,14 @@ module IdentityNationBuilder
         endpoint: call_args[0..1].join('/'), data: call_args.third,
       }
       puts "NationBuilder API: #{data.inspect}"
+    end
+
+    def self.list_from_cache(cache_key)
+      if json = Sidekiq.redis { |r| r.get cache_key }
+        JSON.parse(json)
+      else
+        []
+      end
     end
   end
 end
