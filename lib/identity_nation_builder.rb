@@ -62,9 +62,7 @@ module IdentityNationBuilder
 
   def self.fetch_new_events
     ## Do not run method if another worker is currently processing this method
-    if self.worker_currenly_running?(__method__.to_s)
-      return
-    end
+    return if self.worker_currenly_running?(__method__.to_s)
 
     starting_from = (DateTime.now() - 3.months)
     updated_events = IdentityNationBuilder::API.sites_events(starting_from)
@@ -90,7 +88,7 @@ module IdentityNationBuilder
         invite_only: !nb_event['rsvp_form']['allow_guests']
       )
 
-      self.fetch_new_event_rsvps(event.id)
+      self.delay(retry: false, queue: 'low').fetch_new_event_rsvps(event.id)
     end
 
     updated_events.size

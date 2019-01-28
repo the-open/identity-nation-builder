@@ -7,6 +7,13 @@ ENV['RAILS_ENV'] ||= 'test'
 require 'dotenv'
 Dotenv.load('.env.test')
 
+# This needs to be done once ENV['DATABASE_URL'] is set, and before
+#  environment.rb is required, since that triggers Settings.load! which copies
+# external database urls from ENV into Settings.
+# TODO: Make this less brittle
+require 'support/external_database'
+ExternalDatabaseHelpers.set_external_database_urls(ENV['DATABASE_URL'])
+
 # Load rails
 require File.expand_path('../test_identity_app/config/environment', __FILE__)
 require 'rspec/rails'
@@ -94,4 +101,9 @@ RSpec.configure do |config|
   config.filter_rails_from_backtrace!
   # arbitrary gems may also be filtered via:
   # config.filter_gems_from_backtrace("gem name")
+end
+
+# TODO: Move to external helpers
+def clean_external_database
+  ExternalDatabaseHelpers.clean
 end

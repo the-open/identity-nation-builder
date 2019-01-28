@@ -12,6 +12,8 @@ describe IdentityNationBuilder do
     end
 
     before(:each) do
+      clean_external_database
+
       IdentityNationBuilder::API.should_receive(:sites_events).and_return(events_response["results"])
       IdentityNationBuilder::API.should_receive(:all_event_rsvps).exactly(2).times.with(anything, anything).and_return(event_rsvp_response["results"])
       IdentityNationBuilder::API.should_receive(:person).exactly(6).times.with(anything).and_return(person_response["person"])
@@ -29,7 +31,7 @@ describe IdentityNationBuilder do
     it 'should record all event details' do
       IdentityNationBuilder.fetch_new_events
       nb_event = events_response["results"][0]
-      event_location = "#{nb_event['venue']['name']} - #{nb_event['venue']['address']['address1']} #{nb_event['venue']['address']['address2']} #{nb_event['venue']['address']['address3']}, #{nb_event['venue']['address']['city']}, #{nb_event['venue']['address']['state']}, #{nb_event['venue']['address']['country_code']}"
+      event_location = IdentityNationBuilder.event_address_full(nb_event)
       expect(Event.first).to have_attributes(
         name: nb_event['name'],
         start_time: DateTime.parse(nb_event['start_time']),
@@ -51,7 +53,7 @@ describe IdentityNationBuilder do
 
     it 'should record member details' do
       IdentityNationBuilder.fetch_new_events
-      expect(Member.first).to have_attributes(
+      expect(Member.last).to have_attributes(
         first_name: person_response['person']['first_name'],
         last_name: person_response['person']['last_name'],
         email: person_response['person']['email']
