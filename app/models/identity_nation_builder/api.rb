@@ -86,7 +86,16 @@ module IdentityNationBuilder
     end
 
     def self.find_or_create_person(member)
-      api(:people, :add, { person: member })['person']
+      begin
+        find_or_create_person_without_retry(member)
+      rescue NationBuilder::ClientError => response
+        validation_errors = JSON.parse(response.message)['validation_errors']
+        if validation_errors.try(:first).try(:match, /should look like an email address/)
+          find_or_create_person_without_retry(member.except(:email))
+        else
+          raise response
+        end
+      end
     end
 
     def self.rsvp_person(site_slug, event_id, person)
@@ -133,6 +142,10 @@ module IdentityNationBuilder
     end
 
     private
+
+    def self.find_or_create_person_without_retry(member)
+      api(:people, :add, { person: member })['person']
+    end
 
     def self.api(*args)
       args[2] = {} unless args.third

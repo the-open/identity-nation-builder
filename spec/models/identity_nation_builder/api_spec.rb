@@ -41,4 +41,43 @@ describe IdentityNationBuilder::API do
       end
     end
   end
+
+  describe '.find_or_create_person' do
+    context 'with an invalid email' do
+      let!(:invalid_email) { 'invalid@email' }
+      let(:validation_failed_response) {
+        {
+          status: 400,
+          headers: { 'Content-Type' => 'application/json' },
+          body: {
+            "code": "validation_failed",
+            "message": "Validation Failed.",
+            "validation_errors": [ "email 'test@invalid' should look like an email address" ]
+          }.to_json
+        }
+      }
+      let(:successful_response) {
+        {
+          status: 200,
+          headers: { 'Content-Type' => 'application/json' },
+          body: { person: [ { "mobile": "0401000000" } ] }.to_json
+        }
+      }
+      let!(:people_add_endpoint) {
+        stub_request(:put, %r{people/add})
+          .to_return { |request|
+            if request.body.include?(invalid_email)
+              validation_failed_response
+            else
+              successful_response
+            end
+          }
+      }
+
+      it 'should strip the email and retry' do
+        IdentityNationBuilder::API.find_or_create_person({ "email": invalid_email })
+        expect(people_add_endpoint).to have_been_requested.twice
+      end
+    end
+  end
 end
