@@ -81,8 +81,8 @@ module IdentityNationBuilder
         end_time: DateTime.parse(nb_event['end_time']),
         description: nb_event['intro'],
         location: event_address_full(nb_event),
-        latitude: nb_event['venue']['address']['lat'],
-        longitude: nb_event['venue']['address']['lng'],
+        latitude: nb_event['venue'].try(:[], 'address').try(:[], 'lat'),
+        longitude: nb_event['venue'].try(:[], 'address').try(:[], 'lng'),
         max_attendees: nb_event['capacity'],
         approved: nb_event['status'] == 'published',
         invite_only: !nb_event['rsvp_form']['allow_guests']
@@ -132,7 +132,7 @@ module IdentityNationBuilder
     return event_location if nb_event['venue'].nil?
     event_location += "#{nb_event['venue']['name']} - " unless nb_event['venue']['name'].blank?
     venue_address = nb_event['venue']['address']
-    return event_location unless venue_address.nil?
+    return event_location if venue_address.nil?
     event_location += "#{venue_address['address1']} " unless venue_address['address1'].blank?
     event_location +="#{venue_address['address2']} " unless venue_address['address2'].blank?
     event_location +="#{venue_address['address3']}, " unless venue_address['address3'].blank?

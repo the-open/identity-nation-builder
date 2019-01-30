@@ -64,5 +64,18 @@ describe IdentityNationBuilder do
       IdentityNationBuilder.fetch_new_events
       expect(EventRsvp.count).to eq(2)
     end
+
+    context 'with an event without an address' do
+      it 'should use the event name as the location' do
+        events_without_venue_address = events_response['results']
+        events_without_venue_address.first['venue'].delete('address')
+        IdentityNationBuilder::API.stub(:sites_events).and_return(events_without_venue_address)
+        IdentityNationBuilder.fetch_new_events
+        event = Event.first
+        expect(event.location).to include(events_without_venue_address.first['venue']['name'])
+        expect(event.latitude).to be_nil
+        expect(event.longitude).to be_nil
+      end
+    end
   end
 end
