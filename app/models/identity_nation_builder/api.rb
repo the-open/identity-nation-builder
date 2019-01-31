@@ -17,7 +17,7 @@ module IdentityNationBuilder
     end
 
     def self.tag(site_slug, members, tag)
-      list_id = find_or_create_list(tag)['id']
+      list_id = create_list(tag + DateTime.now().to_i.to_s)['id']
       member_ids = members.map do |member|
         find_or_create_person(member)['id']
       end
@@ -104,11 +104,6 @@ module IdentityNationBuilder
 
     def self.person(people_id)
       api(:people, :show, { id: people_id })["person"]
-    end
-
-    def self.find_or_create_list(tag)
-      matched_lists = all_lists.select {|list| list["slug"] == tag }
-      matched_lists.any? ? matched_lists.first : create_list(tag)
     end
 
     def self.all_lists
