@@ -1,7 +1,6 @@
 require 'rails_helper'
 
 describe IdentityNationBuilder do
-
   context '#sync_type_item' do
     context 'with valid parameters' do
       context 'with rsvp' do
@@ -95,6 +94,22 @@ describe IdentityNationBuilder do
     end
     it 'will raise error on different api call' do
       expect(IdentityNationBuilder::API.attempt_to_rsvp_person_twice(:someotherapicall, "signup_id has already been taken")).to eq(false)
+    end
+  end
+
+  context '#get_push_batch_amount' do
+    context 'with no settings parameters set' do
+      it 'should return default class constant' do
+        expect(IdentityNationBuilder.get_push_batch_amount).to eq(100)
+      end
+    end
+    context 'with settings parameters set' do
+      before(:each) do
+        Settings.stub_chain(:nation_builder, :push_batch_amount) { 10 }
+      end
+      it 'should return set variable' do
+        expect(IdentityNationBuilder.get_push_batch_amount).to eq(10)
+      end
     end
   end
 end

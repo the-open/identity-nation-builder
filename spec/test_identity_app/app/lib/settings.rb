@@ -14,7 +14,9 @@ class Settings
       "site" => ENV['NATION_BUILDER_SITE'],
       "token" => ENV['NATION_BUILDER_TOKEN'],
       "debug" => ENV['NATION_BUILDER_DEBUG'],
-      "author_id" => ENV['NATION_BUILDER_AUTHOR_ID']
+      "author_id" => ENV['NATION_BUILDER_AUTHOR_ID'],
+      "push_batch_amount" => nil,
+      "pull_batch_amount" => nil,
     }
   end
 end

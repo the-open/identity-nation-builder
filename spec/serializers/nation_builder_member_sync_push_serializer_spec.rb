@@ -2,7 +2,7 @@ describe IdentityNationBuilder::NationBuilderMemberSyncPushSerializer do
   context 'serialize' do
     before(:each) do
       Member.all.destroy_all
-
+      Settings.stub_chain(:nation_builder) { {} }
       @member = FactoryBot.create(:member_with_mobile)
       list = FactoryBot.create(:list)
       FactoryBot.create(:list_member, list: list, member: @member)
