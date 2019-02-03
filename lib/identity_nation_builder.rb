@@ -117,11 +117,14 @@ module IdentityNationBuilder
     event_rsvps.each do |nb_event_rsvp|
       person = IdentityNationBuilder::API.person(nb_event_rsvp['person_id'])
       member = Member.upsert_member(
-        firstname: person['first_name'],
-        lastname: person['last_name'],
-        external_ids: Hash[SYSTEM_NAME, person['id']],
-        emails: [{ email: person['email'] }],
-        phones: [{ phone: person['phone'] }]
+        {
+          firstname: person['first_name'],
+          lastname: person['last_name'],
+          external_ids: Hash[SYSTEM_NAME, person['id']],
+          emails: [{ email: person['email'] }],
+          phones: [{ phone: person['phone'] }]
+        },
+        "#{SYSTEM_NAME}:#{__method__.to_s}"
       )
       if member
         member_external_id = MemberExternalId.find_or_create_by!(
