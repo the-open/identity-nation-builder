@@ -199,11 +199,11 @@ ActiveRecord::Schema.define(version: 0) do
     t.integer "max_attendees"
     t.integer "external_id"
     t.text "technical_type"
-    t.string "external_source"
-    t.string "external_subsource"
+    t.string "system"
+    t.string "subsystem"
     t.index ["area_id"], name: "index_events_on_area_id"
     t.index ["campaign_id"], name: "index_events_on_campaign_id"
-    t.index ["external_id", "external_source", "external_subsource"], name: "index_events_on_external_source", unique: true
+    t.index ["external_id", "system", "subsystem"], name: "index_events_on_system", unique: true
     t.index ["external_id"], name: "index_events_on_external_id"
     t.index ["host_id"], name: "index_events_on_host_id"
     t.index ["technical_type"], name: "index_events_on_technical_type"
