@@ -4,6 +4,7 @@ module IdentityNationBuilder
   SYSTEM_NAME = 'nation_builder'
   PULL_BATCH_AMOUNT = 100
   PUSH_BATCH_AMOUNT = 100
+  SYNCING = 'members'
   CONTACT_TYPE = {'rsvp' => 'event', 'tag' => 'list'}
   PULL_JOBS = [[:fetch_new_events, 1.hours]]
 
