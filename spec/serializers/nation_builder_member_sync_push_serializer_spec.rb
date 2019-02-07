@@ -1,12 +1,14 @@
 describe IdentityNationBuilder::NationBuilderMemberSyncPushSerializer do
   context 'serialize' do
+
     before(:each) do
       Member.all.destroy_all
       Settings.stub_chain(:nation_builder) { {} }
-      @member = FactoryBot.create(:member_with_mobile)
+      @member = FactoryBot.create(:member_with_both_phones)
       list = FactoryBot.create(:list)
       FactoryBot.create(:list_member, list: list, member: @member)
-      FactoryBot.create(:member_with_mobile)
+      FactoryBot.create(:member_with_both_phones)
+      Settings.stub_chain(:options, :default_phone_country_code).and_return(nil)
 
       @batch_members = Member.all.in_batches.first
     end
@@ -22,6 +24,20 @@ describe IdentityNationBuilder::NationBuilderMemberSyncPushSerializer do
       expect(rows[0][:mobile]).to eq(ListMember.first.member.mobile)
       expect(rows[0][:first_name]).to eq(ListMember.first.member.first_name)
       expect(rows[0][:last_name]).to eq(ListMember.first.member.last_name)
+    end
+
+    context 'with Settings.options.default_phone_country_code set' do
+      let!(:country_code) { '61'}
+      before { Settings.stub_chain(:options, :default_phone_country_code).and_return(country_code) }
+
+      it 'returns valid object' do
+        rows = ActiveModel::Serializer::CollectionSerializer.new(
+          @batch_members,
+          serializer: IdentityNationBuilder::NationBuilderMemberSyncPushSerializer
+        ).as_json
+        expect(rows[0][:phone]).to eq(@member.landline.gsub(/^#{country_code}/, '0'))
+        expect(rows[0][:mobile]).to eq(@member.mobile.gsub(/^#{country_code}/, '0'))
+      end
     end
   end
 end

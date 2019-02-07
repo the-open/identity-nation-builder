@@ -81,7 +81,7 @@ describe IdentityNationBuilder::API do
     end
 
     context "with a user whose mobile that matches a signup in NationBuilder" do
-      let!(:mobile) { '61468519266' }
+      let!(:mobile) { '0468519266' }
       let!(:people_add_endpoint) {
         stub_request(:put, %r{people/add}).and_return({ status: 400, body: {}.to_json})
       }
@@ -89,11 +89,12 @@ describe IdentityNationBuilder::API do
         { mobile: mobile, phone: '1111111111', email: 'test@test.com' }
       }
 
-      it 'should should match the record on mobile, return the id but not update the record' do
+      it 'should should match the record on mobile (without leading zero), return the id but not update the record' do
         expect(PhoneNumber).to receive(:has_mobile_phone_type?).with(mobile).and_return(true)
         people_match_endpoint = stub_request(:get, %r{people/match})
           .to_return { |request|
             expect(request.uri.query_values).to include('mobile')
+            expect(request.uri.query_values['mobile']).to eq('468519266')
             {
               status: 200,
               headers: { 'Content-Type' => 'application/json' },
@@ -107,7 +108,7 @@ describe IdentityNationBuilder::API do
     end
 
     context "with a user without a mobile but whose phone that matches a signup in NationBuilder" do
-      let!(:phone) { '61295700000' }
+      let!(:phone) { '0295700000' }
       let!(:people_add_endpoint) {
         stub_request(:put, %r{people/add}).and_return({ status: 400, body: {}.to_json})
       }
@@ -115,11 +116,12 @@ describe IdentityNationBuilder::API do
         { mobile: '', phone: phone, email: 'test@test.com' }
       }
 
-      it 'should should match the record on phone, return the id but not update the record' do
+      it 'should should match the record on phone (with leading zero removed), return the id but not update the record' do
         expect(PhoneNumber).to receive(:has_mobile_phone_type?).with(phone).and_return(false)
         people_match_endpoint = stub_request(:get, %r{people/match})
           .to_return { |request|
             expect(request.uri.query_values).to include('phone')
+            expect(request.uri.query_values['phone']).to eq('295700000')
             {
               status: 200,
               headers: { 'Content-Type' => 'application/json' },

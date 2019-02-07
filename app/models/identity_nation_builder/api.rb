@@ -134,10 +134,15 @@ module IdentityNationBuilder
       phone_to_lookup = member[:mobile].present? ? member[:mobile] : member[:phone]
       if phone_to_lookup.present?
         phone_type = PhoneNumber.has_mobile_phone_type?(phone_to_lookup) ? "mobile" : "phone"
+        phone_to_lookup = strip_leading_zero(phone_to_lookup)
         response = api(:people, :match, { phone_type => phone_to_lookup })
         matched_person = response['person']
         return matched_person if matched_person
       end
+    end
+
+    def self.strip_leading_zero(phone)
+      phone.gsub(/^0/, '')
     end
 
     def self.upsert_person(member)

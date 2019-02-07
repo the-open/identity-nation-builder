@@ -19,4 +19,7 @@ class Settings
       "pull_batch_amount" => nil,
     }
   end
+
+  def self.options
+  end
 end

@@ -24,5 +24,12 @@ FactoryBot.define do
         create(:landline_number, member: member)
       end
     end
+
+    factory :member_with_both_phones do
+      after(:create) do |member, evaluator|
+        create(:landline_number, member: member)
+        create(:mobile_number, member: member)
+      end
+    end
   end
 end
