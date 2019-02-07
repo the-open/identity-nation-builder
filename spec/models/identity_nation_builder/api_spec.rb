@@ -79,5 +79,88 @@ describe IdentityNationBuilder::API do
         expect(people_add_endpoint).to have_been_requested.twice
       end
     end
+
+    context "with a user whose mobile that matches a signup in NationBuilder" do
+      let!(:mobile) { '61468519266' }
+      let!(:people_add_endpoint) {
+        stub_request(:put, %r{people/add}).and_return({ status: 400, body: {}.to_json})
+      }
+      let!(:member_data) {
+        { mobile: mobile, phone: '1111111111', email: 'test@test.com' }
+      }
+
+      it 'should should match the record on mobile, return the id but not update the record' do
+        expect(PhoneNumber).to receive(:has_mobile_phone_type?).with(mobile).and_return(true)
+        people_match_endpoint = stub_request(:get, %r{people/match})
+          .to_return { |request|
+            expect(request.uri.query_values).to include('mobile')
+            {
+              status: 200,
+              headers: { 'Content-Type' => 'application/json' },
+              body: { person: [ { "mobile": mobile } ] }.to_json
+            }
+          }
+        IdentityNationBuilder::API.find_or_create_person(member_data)
+        expect(people_match_endpoint).to have_been_requested
+        expect(people_add_endpoint).to_not have_been_requested
+      end
+    end
+
+    context "with a user without a mobile but whose phone that matches a signup in NationBuilder" do
+      let!(:phone) { '61295700000' }
+      let!(:people_add_endpoint) {
+        stub_request(:put, %r{people/add}).and_return({ status: 400, body: {}.to_json})
+      }
+      let!(:member_data) {
+        { mobile: '', phone: phone, email: 'test@test.com' }
+      }
+
+      it 'should should match the record on phone, return the id but not update the record' do
+        expect(PhoneNumber).to receive(:has_mobile_phone_type?).with(phone).and_return(false)
+        people_match_endpoint = stub_request(:get, %r{people/match})
+          .to_return { |request|
+            expect(request.uri.query_values).to include('phone')
+            {
+              status: 200,
+              headers: { 'Content-Type' => 'application/json' },
+              body: { person: [ { "phone": phone } ] }.to_json
+            }
+          }
+        IdentityNationBuilder::API.find_or_create_person(member_data)
+        expect(people_match_endpoint).to have_been_requested
+        expect(people_add_endpoint).to_not have_been_requested
+      end
+    end
+
+    context "with hose mobile DOES NOT matches a signup in NationBuilder" do
+      let!(:mobile) { '61468519266' }
+      let!(:people_match_endpoint) {
+        stub_request(:get, %r{people/match})
+          .to_return { |request|
+            {
+              status: 400,
+              headers: { 'Content-Type' => 'application/json' },
+              body: { "code": "no_matches", "message": "No people matched the given criteria." }.to_json
+            }
+          }
+      }
+      let!(:people_add_endpoint) {
+        stub_request(:put, %r{people/add}).and_return({
+          status: 200,
+          headers: { 'Content-Type' => 'application/json' },
+          body: { person: {mobile: mobile, first_name: "new user"}}.to_json
+        })
+      }
+      let!(:member_data) {
+        { mobile: mobile, phone: '1111111111', email: 'test@test.com' }
+      }
+
+      it 'should upsert the user' do
+        expect(PhoneNumber).to receive(:has_mobile_phone_type?).with(mobile).and_return(true)
+        IdentityNationBuilder::API.find_or_create_person(member_data)
+        expect(people_match_endpoint).to have_been_requested
+        expect(people_add_endpoint).to have_been_requested
+      end
+    end
   end
 end

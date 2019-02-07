@@ -86,16 +86,8 @@ module IdentityNationBuilder
     end
 
     def self.find_or_create_person(member)
-      begin
-        find_or_create_person_without_retry(member)
-      rescue NationBuilder::ClientError => response
-        validation_errors = JSON.parse(response.message)['validation_errors']
-        if validation_errors.try(:first).try(:match, /should look like an email address/)
-          find_or_create_person_without_retry(member.except(:email))
-        else
-          raise response
-        end
-      end
+      person = find_person_by_mobile_or_phone(member)
+      person ? person : upsert_person(member)
     end
 
     def self.rsvp_person(site_slug, event_id, person)
@@ -138,7 +130,31 @@ module IdentityNationBuilder
 
     private
 
-    def self.find_or_create_person_without_retry(member)
+    def self.find_person_by_mobile_or_phone(member)
+      phone_to_lookup = member[:mobile].present? ? member[:mobile] : member[:phone]
+      if phone_to_lookup.present?
+        phone_type = PhoneNumber.has_mobile_phone_type?(phone_to_lookup) ? "mobile" : "phone"
+        response = api(:people, :match, { phone_type => phone_to_lookup })
+        matched_person = response['person']
+        return matched_person if matched_person
+      end
+    end
+
+    def self.upsert_person(member)
+      begin
+        upsert_person_without_retry(member)
+      rescue NationBuilder::ClientError => response
+        validation_errors = JSON.parse(response.message)['validation_errors']
+        if validation_errors.try(:first).try(:match, /should look like an email address/)
+          upsert_person_without_retry(member.except(:email))
+        else
+          raise response
+        end
+      end
+    end
+
+
+    def self.upsert_person_without_retry(member)
       api(:people, :add, { person: member })['person']
     end
 

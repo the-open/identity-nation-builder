@@ -28,4 +28,8 @@ class PhoneNumber < ApplicationRecord
   rescue Phony::NormalizationError, ArgumentError
     return nil
   end
+
+  def self.has_mobile_phone_type?(phone)
+    false
+  end
 end
