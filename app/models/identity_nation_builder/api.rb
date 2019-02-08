@@ -133,8 +133,8 @@ module IdentityNationBuilder
     def self.find_person_by_mobile_or_phone(member)
       phone_to_lookup = member[:mobile].present? ? member[:mobile] : member[:phone]
       if phone_to_lookup.present?
-        phone_type = PhoneNumber.has_mobile_phone_type?(phone_to_lookup) ? "mobile" : "phone"
         phone_to_lookup = strip_leading_zero(phone_to_lookup)
+        phone_type = is_mobile?(phone_to_lookup) ? "mobile" : "phone"
         response = api(:people, :match, { phone_type => phone_to_lookup })
         matched_person = response['person']
         return matched_person if matched_person
@@ -143,6 +143,11 @@ module IdentityNationBuilder
 
     def self.strip_leading_zero(phone)
       phone.gsub(/^0/, '')
+    end
+
+    def self.is_mobile?(phone)
+      mobile_prefix = Settings.options.default_mobile_phone_national_destination_code.to_s
+      mobile_prefix && phone =~ /^#{mobile_prefix}/
     end
 
     def self.upsert_person(member)

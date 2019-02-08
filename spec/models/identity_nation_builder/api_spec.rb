@@ -5,6 +5,7 @@ describe IdentityNationBuilder::API do
     allow(Settings).to receive_message_chain(:nation_builder, :site).and_return('test')
     allow(Settings).to receive_message_chain(:nation_builder, :token).and_return('test')
     allow(Settings).to receive_message_chain(:nation_builder, :debug).and_return(false)
+    allow(Settings).to receive_message_chain(:options, :default_mobile_phone_national_destination_code).and_return(4)
   end
 
   describe '.sites_events' do
@@ -90,7 +91,6 @@ describe IdentityNationBuilder::API do
       }
 
       it 'should should match the record on mobile (without leading zero), return the id but not update the record' do
-        expect(PhoneNumber).to receive(:has_mobile_phone_type?).with(mobile).and_return(true)
         people_match_endpoint = stub_request(:get, %r{people/match})
           .to_return { |request|
             expect(request.uri.query_values).to include('mobile')
@@ -117,7 +117,6 @@ describe IdentityNationBuilder::API do
       }
 
       it 'should should match the record on phone (with leading zero removed), return the id but not update the record' do
-        expect(PhoneNumber).to receive(:has_mobile_phone_type?).with(phone).and_return(false)
         people_match_endpoint = stub_request(:get, %r{people/match})
           .to_return { |request|
             expect(request.uri.query_values).to include('phone')
@@ -158,7 +157,6 @@ describe IdentityNationBuilder::API do
       }
 
       it 'should upsert the user' do
-        expect(PhoneNumber).to receive(:has_mobile_phone_type?).with(mobile).and_return(true)
         IdentityNationBuilder::API.find_or_create_person(member_data)
         expect(people_match_endpoint).to have_been_requested
         expect(people_add_endpoint).to have_been_requested
