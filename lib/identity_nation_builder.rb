@@ -84,8 +84,8 @@ module IdentityNationBuilder
     updated_events.each do |nb_event|
 
       event = Event.find_or_initialize_by(
-        system: SYSTEM_NAME,
-        subsystem: nb_event["site_slug"],
+        external_source: SYSTEM_NAME,
+        external_subsource: nb_event["site_slug"],
         external_id: nb_event["id"]
       )
 
@@ -110,7 +110,7 @@ module IdentityNationBuilder
 
   def self.fetch_new_event_rsvps(event_id)
     event = Event.find(event_id)
-    event_rsvps = IdentityNationBuilder::API.all_event_rsvps(event.subsystem, event.external_id)
+    event_rsvps = IdentityNationBuilder::API.all_event_rsvps(event.external_subsource, event.external_id)
     event.update_attributes!(
       attendees: event_rsvps.count
     )
