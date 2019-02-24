@@ -48,19 +48,19 @@ module IdentityNationBuilder
     end
 
     def self.all_events(site_slugs, starting)
-      $event_results = []
+      event_results = []
       site_slugs.each do |site_slug|
-        $page = NationBuilder::Paginator.new(get_api_client, events(site_slug, starting))
-        page_results = $page.body['results'].map { |result| result['site_slug'] = site_slug; result }
-        $event_results = $event_results + page_results
+        page = NationBuilder::Paginator.new(get_api_client, events(site_slug, starting))
+        page_results = page.body['results'].map { |result| result['site_slug'] = site_slug; result }
+        event_results = event_results + page_results
         loop do
-          break unless $page.next?
-          $page = $page.next
-          page_results = $page.body['results'].map { |result| result['site_slug'] = site_slug; result }
-          $event_results = $event_results + page_results
+          break unless page.next?
+          page = page.next
+          page_results = page.body['results'].map { |result| result['site_slug'] = site_slug; result }
+          event_results = event_results + page_results
         end
       end
-      $event_results
+      event_results
     end
 
     def self.events(site_slug, starting)
@@ -68,17 +68,17 @@ module IdentityNationBuilder
     end
 
     def self.all_event_rsvps(site_slug, event_id)
-      $event_rsvp_results = []
-      $page = NationBuilder::Paginator.new(get_api_client, event_rsvps(site_slug, event_id))
-      page_results = $page.body['results']
-      $event_rsvp_results = $event_rsvp_results + page_results
+      event_rsvp_results = []
+      page = NationBuilder::Paginator.new(get_api_client, event_rsvps(site_slug, event_id))
+      page_results = page.body['results']
+      event_rsvp_results = event_rsvp_results + page_results
       loop do
-        break unless $page.next?
-        $page = $page.next
-        page_results = $page.body['results']
-        $event_rsvp_results = $event_rsvp_results + page_results
+        break unless page.next?
+        page = page.next
+        page_results = page.body['results']
+        event_rsvp_results = event_rsvp_results + page_results
       end
-      $event_rsvp_results
+      event_rsvp_results
     end
 
     def self.event_rsvps(site_slug, event_id)
@@ -99,17 +99,17 @@ module IdentityNationBuilder
     end
 
     def self.all_lists
-      $list_results = []
-      $page = NationBuilder::Paginator.new(get_api_client, lists)
-      page_results = $page.body['results']
-      $list_results = $list_results + page_results
+      list_results = []
+      page = NationBuilder::Paginator.new(get_api_client, lists)
+      page_results = page.body['results']
+      list_results = list_results + page_results
       loop do
-        break unless $page.next?
-        $page = $page.next
-        page_results = $page.body['results']
-        $list_results = $list_results + page_results
+        break unless page.next?
+        page = page.next
+        page_results = page.body['results']
+        list_results = list_results + page_results
       end
-      $list_results
+      list_results
     end
 
     def self.lists
