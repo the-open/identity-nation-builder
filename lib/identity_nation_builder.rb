@@ -74,11 +74,11 @@ module IdentityNationBuilder
     defined?(PULL_JOBS) && PULL_JOBS.is_a?(Array) ? PULL_JOBS : []
   end
   
-  def self.fetch_new_events
+  def self.fetch_new_events(over_period_of_time=3.months)
     ## Do not run method if another worker is currently processing this method
     return if self.worker_currenly_running?(__method__.to_s)
 
-    starting_from = (DateTime.now() - 3.months)
+    starting_from = (DateTime.now() - over_period_of_time)
     updated_events = IdentityNationBuilder::API.sites_events(starting_from)
 
     updated_events.each do |nb_event|
@@ -102,7 +102,7 @@ module IdentityNationBuilder
         invite_only: !nb_event['rsvp_form']['allow_guests']
       )
 
-      self.delay(retry: false, queue: 'low').fetch_new_event_rsvps(event.id)
+      self.delay(retry: true, queue: 'low').fetch_new_event_rsvps(event.id)
     end
 
     updated_events.size
