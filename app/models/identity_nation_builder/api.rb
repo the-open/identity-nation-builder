@@ -2,13 +2,6 @@ require 'nationbuilder'
 
 module IdentityNationBuilder
   class API
-    def self.clock
-      last_updated_at = Time.parse(Sidekiq.redis { |r| r.get 'nationbuilder:last_updated_at' } || '1970-01-01 00:00:00')
-      return unless last_updated_at < 5.minutes.ago
-      Sidekiq.redis { |r| r.set 'nationbuilder:sites', api(:sites, :index, { per_page: 100 })['results'].to_json}
-      Sidekiq.redis { |r| r.set 'nationbuilder:last_updated_at', DateTime.now }
-    end
-
     def self.rsvp(site_slug, members, event_id)
       member_ids = members.map do |member|
         rsvp_person(site_slug, event_id, find_or_create_person(member))
