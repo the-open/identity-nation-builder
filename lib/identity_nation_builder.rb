@@ -123,7 +123,7 @@ module IdentityNationBuilder
           lastname: person['last_name'],
           external_ids: Hash[SYSTEM_NAME, person['id']],
           emails: [{ email: person['email'] }],
-          phones: [{ phone: person['phone'] }]
+          phones: ['mobile', 'phone'].map{|number_type| person[number_type] }.compact.map{|phone| { phone: phone } }
         },
         "#{SYSTEM_NAME}:#{__method__.to_s}"
       )
