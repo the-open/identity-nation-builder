@@ -133,13 +133,13 @@ class Member < ApplicationRecord
     end
   end
 
-  def self.upsert_member(hash, entry_point = '')
-    ApplicationRecord.transaction do
-      return upsert_member_raw(hash, entry_point)
+  def self.upsert_member(hash, entry_point = '', ignore_name_change = false)
+      ApplicationRecord.transaction do
+        return upsert_member_raw(hash, entry_point, ignore_name_change)
+      end
     end
-  end
 
-  def self.upsert_member_raw(hash, entry_point)
+  def self.upsert_member_raw(hash, entry_point, ignore_name_change)
     # fail if there's no data
     if hash.nil?
       Rails.logger.info hash
@@ -154,6 +154,7 @@ class Member < ApplicationRecord
                                end
     email = Cleanser.cleanse_email(hash.try(:[], :emails).try(:[], 0).try(:[], :email))
     phone = PhoneNumber.standardise_phone_number(hash.try(:[], :phones).try(:[], 0).try(:[], :phone))
+    guid = hash[:guid]
 
     # reject the email address if it's invalid
     email = nil unless Cleanser.accept_email?(email)
@@ -161,17 +162,20 @@ class Member < ApplicationRecord
     # then create with the passed entry point
     # use rescue..retry to avoid errors where two Sidekiq processes try to insert different actions at the same time
     member_created = false
-
     begin
       member = external_matched_members.first if external_matched_members.present? && external_matched_members.length == 1
 
-      unless member || email || phone
-        Rails.logger.info('Rejected upsert for member because there was no email or phone found')
+      unless member || email || phone || guid
+        Rails.logger.info('Rejected upsert for member because there was no email or phone or guid found')
         return nil
       end
 
-      member = Member.find_by_email(email) if !member && email.present?
-      member = Member.find_by_phone(phone) unless member
+      member = Member.find_by(email: email) if !member && email.present?
+      if !hash[:ignore_phone_number_match]
+        member = Member.find_by_phone(phone) if !member && phone.present?
+      end
+      member = Member.find_by(guid: guid) if !member && guid.present?
+
       unless member
         member = Member.create!(email: email,
                                 entry_point: entry_point)
@@ -183,7 +187,8 @@ class Member < ApplicationRecord
 
     if hash.key?(:external_ids)
       hash[:external_ids].each do |system, external_id|
-        raise "External ID for #{system} cannot be blank" unless external_id.present?
+        raise "External ID for #{system} cannot be blank" if external_id.blank?
+
         member.update_external_id(system, external_id)
       end
     end
@@ -192,25 +197,26 @@ class Member < ApplicationRecord
     return member if !member_created && hash[:updated_at].present? && hash[:updated_at] < member.updated_at
 
     # Handle names
-    new_name = {
-      first_name: hash[:firstname],
-      middle_names: hash[:middlenames],
-      last_name: hash[:lastname]
-    }
+    unless ignore_name_change
+      new_name = {
+        first_name: hash[:firstname],
+        middle_names: hash[:middlenames],
+        last_name: hash[:lastname]
+      }
 
-    old_name = {
-      first_name: member.first_name,
-      middle_names: member.middle_names,
-      last_name: member.last_name
-    }
+      old_name = {
+        first_name: member.first_name,
+        middle_names: member.middle_names,
+        last_name: member.last_name
+      }
 
-    if hash.key?(:name)
-      firstname, lastname = hash[:name].split(' ')
-      new_name[:first_name] = firstname unless firstname.empty?
-      new_name[:last_name] = lastname unless lastname.empty?
+      if hash.key?(:name)
+        firstname, lastname = hash[:name].split(' ')
+        new_name[:first_name] = firstname unless firstname.empty?
+        new_name[:last_name] = lastname unless lastname.empty?
+      end
+      member.update!(combine_names(old_name, new_name))
     end
-
-    member.update_attributes(combine_names(old_name, new_name))
 
     if hash.key?(:custom_fields)
       hash[:custom_fields].each do |custom_field_hash|
@@ -224,8 +230,7 @@ class Member < ApplicationRecord
     # if there are phone numbers present, save them to the member
     if hash.key?(:phones) && !hash[:phones].empty?
       hash[:phones].each do |phone_number|
-        standardised_phone = PhoneNumber.standardise_phone_number(phone_number[:phone])
-        member.update_phone_number(standardised_phone)
+        member.update_phone_number(phone_number[:phone])
       end
     end
 
@@ -240,10 +245,13 @@ class Member < ApplicationRecord
 
     if hash.key?(:subscriptions)
       hash[:subscriptions].each do |sh|
-        next unless subscription = Subscription.find_by(id: sh[:id])
+        next unless (
+          subscription = Subscription.find_by(id: sh[:id]) || Subscription.find_by(slug: sh[:slug])
+        )
+
         case sh[:action]
         when 'subscribe'
-          member.subscribe_to(subscription)
+          member.subscribe_to(subscription, sh[:reason])
         when 'unsubscribe'
           member.unsubscribe_from(subscription, sh[:reason])
         end
