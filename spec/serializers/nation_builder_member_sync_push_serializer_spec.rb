@@ -2,6 +2,8 @@ describe IdentityNationBuilder::NationBuilderMemberSyncPushSerializer do
   context 'serialize' do
 
     before(:each) do
+      Settings.stub_chain(:options, :default_phone_country_code) { '61' }
+      Settings.stub_chain(:options, :default_mobile_phone_national_destination_code) { 4 }
       Member.all.destroy_all
       Settings.stub_chain(:nation_builder) { {} }
       @member = FactoryBot.create(:member_with_both_phones)
