@@ -55,8 +55,8 @@ describe IdentityNationBuilder do
         event_location = IdentityNationBuilder.event_address_full(nb_event)
         expect(Event.first).to have_attributes(
           name: nb_event['name'],
-          start_time: DateTime.parse(nb_event['start_time']),
-          end_time: DateTime.parse(nb_event['end_time']),
+          start_time: nb_event['start_time'] && DateTime.parse(nb_event['start_time']),
+          end_time: nb_event['end_date'] && DateTime.parse(nb_event['end_date']),
           description: nb_event['intro'],
           location: event_location,
           latitude: Float(nb_event['venue']['address']['lat']),
