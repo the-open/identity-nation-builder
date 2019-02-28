@@ -81,7 +81,7 @@ module IdentityNationBuilder
     starting_from = (DateTime.now() - over_period_of_time)
     updated_events = IdentityNationBuilder::API.sites_events(starting_from)
 
-    spacing = updated_events.count == 1 ? 0 : 10.minutes / (updated_events.count - 1)
+    spacing = updated_events.count == 1 ? 0 : 30.minutes / (updated_events.count - 1)
 
     updated_events.each_with_index do |nb_event, index|
 
@@ -117,7 +117,7 @@ module IdentityNationBuilder
       attendees: event_rsvps.count
     )
 
-    event_rsvps.each do |nb_event_rsvp|
+    event_rsvps.each_with_index do |nb_event_rsvp, index|
       person = IdentityNationBuilder::API.person(nb_event_rsvp['person_id'])
       member = Member.upsert_member(
         {
@@ -142,6 +142,9 @@ module IdentityNationBuilder
         event_rsvp.update_attributes!(
           attended: nb_event_rsvp['attended']
         )
+      end
+      if (index + 1) % 50 == 0
+        sleep 10
       end
     end
   end

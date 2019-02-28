@@ -16,7 +16,7 @@ describe IdentityNationBuilder do
       IdentityNationBuilder::API.stub_chain(:sites_events) { events_response["results"] }
     end
 
-    it 'should schedule the jobs over 10 minutes' do
+    it 'should schedule the jobs over 30 minutes' do
       IdentityNationBuilder.fetch_new_events
 
       jobs_in_queue = Sidekiq::Extensions::DelayedClass.jobs
@@ -24,7 +24,7 @@ describe IdentityNationBuilder do
 
       first_job_to_run_at = Time.parse(jobs_in_queue[0]["run_at"])
       second_job_to_run_at = Time.parse(jobs_in_queue[1]["run_at"])
-      expect(second_job_to_run_at - first_job_to_run_at).to eq(10.minutes)
+      expect(second_job_to_run_at - first_job_to_run_at).to eq(30.minutes)
     end
 
     context 'with SideKiq inline' do
