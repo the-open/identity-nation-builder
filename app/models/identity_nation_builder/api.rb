@@ -10,7 +10,7 @@ module IdentityNationBuilder
     end
 
     def self.tag(site_slug, members, tag)
-      list_id = create_list(tag + DateTime.now().to_i.to_s)['id']
+      list_id = create_list(tag)['id']
       member_ids = members.map do |member|
         find_or_create_person(member)['id']
       end
@@ -110,7 +110,9 @@ module IdentityNationBuilder
     end
 
     def self.create_list(tag)
-      api(:lists, :create, { list: { name: tag, slug: tag, author_id: Settings.nation_builder.author_id } })['list_resource']
+      slug = "tempid_#{SecureRandom.hex(11)}"
+      name = "Temp list for tag - #{tag}"
+      api(:lists, :create, { list: { name: name, slug: slug, author_id: Settings.nation_builder.author_id } })['list_resource']
     end
 
     def self.add_people_list(list_id, member_ids)
