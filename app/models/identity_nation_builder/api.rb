@@ -172,7 +172,10 @@ module IdentityNationBuilder
         raise
       rescue NationBuilder::ClientError => e
         payload = JSON.parse(e.message)
-        raise unless payload_has_a_no_match_code?(payload) || attempt_to_rsvp_person_twice(args[1], e.message)
+        unless payload_has_a_no_match_code?(payload) || attempt_to_rsvp_person_twice(args[1], e.message)
+          log_api_call(started_at, payload, *args)
+          raise
+        end
       end
       log_api_call(started_at, payload, *args)
       payload
