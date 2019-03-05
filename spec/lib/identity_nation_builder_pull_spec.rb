@@ -21,9 +21,9 @@ describe IdentityNationBuilder do
 
       jobs_in_queue = Sidekiq::Extensions::DelayedClass.jobs
       expect(jobs_in_queue.size).to eq(events_response["results"].size)
-
-      first_job_to_run_at = Time.parse(jobs_in_queue[0]["run_at"])
-      second_job_to_run_at = Time.parse(jobs_in_queue[1]["run_at"])
+      
+      first_job_to_run_at = Time.at(jobs_in_queue[0]["run_at"])
+      second_job_to_run_at = Time.at(jobs_in_queue[1]["run_at"])
       expect(second_job_to_run_at - first_job_to_run_at).to eq(30.minutes)
     end
 

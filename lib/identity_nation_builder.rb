@@ -104,7 +104,7 @@ module IdentityNationBuilder
         invite_only: !nb_event['rsvp_form']['allow_guests']
       )
 
-      self.delay(retry: true, queue: 'low', run_at: (spacing * index).since).fetch_new_event_rsvps(event.id)
+      self.delay(retry: true, queue: 'low', run_at: (spacing * index).since.to_i).fetch_new_event_rsvps(event.id)
     end
 
     updated_events.size
