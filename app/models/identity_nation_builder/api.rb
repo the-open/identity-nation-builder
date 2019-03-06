@@ -120,7 +120,7 @@ module IdentityNationBuilder
     end
 
     def self.tag_list(list_id, tag)
-      api(:lists, :add_tag, { list_id: list_id, tag: tag })
+      api(:lists, :add_tag, { list_id: list_id, tag: URI.escape(tag) })
     end
 
     private

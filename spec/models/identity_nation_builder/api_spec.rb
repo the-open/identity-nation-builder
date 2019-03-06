@@ -162,5 +162,15 @@ describe IdentityNationBuilder::API do
         expect(people_add_endpoint).to have_been_requested
       end
     end
+
+    describe '.tag_list' do
+      let!(:tag) { 'will: barnstorm' }
+
+      it 'should url encode the tag' do
+        tag_request = stub_request(:post, %r{lists/1/tag/will:%20barnstorm})
+        IdentityNationBuilder::API.api(:lists, :add_tag, { list_id: 1, tag: tag })
+        expect(tag_request).to have_been_requested
+      end
+    end
   end
 end
