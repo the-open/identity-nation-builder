@@ -21,7 +21,7 @@ describe IdentityNationBuilder do
 
       jobs_in_queue = Sidekiq::Extensions::DelayedClass.jobs
       expect(jobs_in_queue.size).to eq(events_response["results"].size)
-      
+
       first_job_to_run_at = Time.at(jobs_in_queue[0]["run_at"])
       second_job_to_run_at = Time.at(jobs_in_queue[1]["run_at"])
       expect(second_job_to_run_at - first_job_to_run_at).to eq(30.minutes)
@@ -63,7 +63,8 @@ describe IdentityNationBuilder do
           longitude: Float(nb_event['venue']['address']['lng']),
           max_attendees: Integer(nb_event['capacity']),
           approved: nb_event['status'] == 'published',
-          invite_only: !nb_event['rsvp_form']['allow_guests']
+          invite_only: !nb_event['rsvp_form']['allow_guests'],
+          data: nb_event
         )
       end
 
@@ -85,6 +86,10 @@ describe IdentityNationBuilder do
       it 'should fetch the new event rsvps and insert them' do
         IdentityNationBuilder.fetch_new_events
         expect(EventRsvp.count).to eq(2)
+        event = Event.where(external_id: 1).first
+        event_rsvp = EventRsvp.where(event_id: event.id).first
+        json_from_nb = event_rsvp_response["results"][2]
+        expect(event_rsvp.data).to eq(json_from_nb)
       end
     end
 

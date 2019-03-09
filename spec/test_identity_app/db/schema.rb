@@ -173,6 +173,7 @@ ActiveRecord::Schema.define(version: 0) do
     t.datetime "updated_at"
     t.datetime "deleted_at"
     t.boolean "attended"
+    t.json 'data', default: '{}'
     t.index ["event_id"], name: "index_event_rsvps_on_event_id"
     t.index ["member_id"], name: "index_event_rsvps_on_member_id"
   end
@@ -201,6 +202,7 @@ ActiveRecord::Schema.define(version: 0) do
     t.text "technical_type"
     t.string "system"
     t.string "subsystem"
+    t.json 'data', default: '{}'
     t.index ["area_id"], name: "index_events_on_area_id"
     t.index ["campaign_id"], name: "index_events_on_campaign_id"
     t.index ["external_id", "system", "subsystem"], name: "index_events_on_system", unique: true

@@ -73,7 +73,7 @@ module IdentityNationBuilder
   def self.get_pull_jobs
     defined?(PULL_JOBS) && PULL_JOBS.is_a?(Array) ? PULL_JOBS : []
   end
-  
+
   def self.fetch_new_events(over_period_of_time=1.month)
     ## Do not run method if another worker is currently processing this method
     return if self.worker_currenly_running?(__method__.to_s)
@@ -101,7 +101,8 @@ module IdentityNationBuilder
         longitude: nb_event['venue'].try(:[], 'address').try(:[], 'lng'),
         max_attendees: nb_event['capacity'],
         approved: nb_event['status'] == 'published',
-        invite_only: !nb_event['rsvp_form']['allow_guests']
+        invite_only: !nb_event['rsvp_form']['allow_guests'],
+        data: nb_event
       )
 
       self.delay(retry: true, queue: 'low', run_at: (spacing * index).since.to_i).fetch_new_event_rsvps(event.id)
@@ -140,7 +141,8 @@ module IdentityNationBuilder
           member_id: member.id
         )
         event_rsvp.update_attributes!(
-          attended: nb_event_rsvp['attended']
+          attended: nb_event_rsvp['attended'],
+          data: nb_event_rsvp
         )
       end
       if (index + 1) % 50 == 0
