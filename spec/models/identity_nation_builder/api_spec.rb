@@ -178,21 +178,72 @@ describe IdentityNationBuilder::API do
       let!(:event_id) { 1 }
       let!(:mark_as_attended) { true }
 
-      it 'should call the api with correct options' do
-        people_match_endpoint = stub_request(:get, %r{people/match})
-          .to_return {
-            {
+      context 'with no existing rsvp' do
+        it 'should call the rsvp/create endpoint with attended set' do
+          people_match_endpoint = stub_request(:get, %r{people/match})
+            .to_return {
+              {
+                status: 200,
+                headers: { 'Content-Type' => 'application/json' },
+                body: { person: member }.to_json
+              }
+            }
+          rsvp_request = stub_request(:post, %r{/sites/test/pages/events/1/rsvps})
+            .with(body: hash_including(rsvp: { person_id: 1, attended: true}))
+            .to_return({
               status: 200,
               headers: { 'Content-Type' => 'application/json' },
-              body: { person: member }.to_json
+              body: { rsvp: { person_id: 1, attended: true }}.to_json
+            })
+          IdentityNationBuilder::API.rsvp('test', [member], event_id, mark_as_attended)
+          expect(people_match_endpoint).to have_been_requested
+          expect(rsvp_request).to have_been_requested
+        end
+      end
+
+      context 'with an existing rsvp' do
+        it 'should update the rsvp if attended is set' do
+          people_match_endpoint = stub_request(:get, %r{people/match})
+            .to_return {
+              {
+                status: 200,
+                headers: { 'Content-Type' => 'application/json' },
+                body: { person: member }.to_json
+              }
             }
-          }
-        rsvp_request = stub_request(:post, %r{/sites/test/pages/events/1/rsvps})
-          .with(body: hash_including(rsvp: { person_id: 1, attended: true}))
-          .to_return(status: 200)
-        IdentityNationBuilder::API.rsvp('test', [member], event_id, mark_as_attended)
-        expect(people_match_endpoint).to have_been_requested
-        expect(rsvp_request).to have_been_requested
+          rsvp_create_request = stub_request(:post, %r{/sites/test/pages/events/1/rsvps})
+            .with(body: hash_including(rsvp: { person_id: 1, attended: true}))
+            .to_return({
+              status: 400,
+              headers: { 'Content-Type' => 'application/json' },
+              body: {
+                "code": "validation_failed",
+                "message": "Validation Failed.",
+                "validation_errors": [ "signup_id has already been taken" ]
+              }.to_json
+            })
+          rsvp_list_request = stub_request(:get, %r{pages/events/1/rsvps})
+            .to_return({
+              status: 200,
+              headers: { 'Content-Type' => 'application/json' },
+              body: {
+                results: [{ id: 12222, event_id: event_id, person_id: 1, attended: false }]
+              }.to_json
+            })
+          rsvp_update_request = stub_request(:put, %r{pages/events/1/rsvps})
+            .to_return({
+              status: 200,
+              headers: { 'Content-Type' => 'application/json' },
+              body: {
+                rsvp: { id: 12222, event_id: event_id, person_id: 1, attended: false }
+              }.to_json
+            })
+          IdentityNationBuilder::API.rsvp('test', [member], event_id, mark_as_attended)
+          expect(people_match_endpoint).to have_been_requested
+          expect(rsvp_create_request).to have_been_requested
+          expect(rsvp_list_request).to have_been_requested
+          expect(rsvp_update_request).to have_been_requested
+        end
       end
     end
   end

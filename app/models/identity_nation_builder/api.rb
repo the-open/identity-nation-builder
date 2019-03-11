@@ -4,7 +4,15 @@ module IdentityNationBuilder
   class API
     def self.rsvp(site_slug, members, event_id, mark_as_attended=false)
       member_ids = members.map do |member|
-        rsvp_person(site_slug, event_id, find_or_create_person(member), mark_as_attended)
+        person = find_or_create_person(member)
+        response = rsvp_person(site_slug, event_id, person, mark_as_attended)
+        if person && !response.try(:[], 'rsvp') && mark_as_attended
+          pager = NationBuilder::Paginator.new(get_api_client, event_rsvps(site_slug, event_id))
+          rsvp = pager.body['results'].select { |result| result['person_id'] == person['id'] }.first
+          if rsvp && !rsvp['attended']
+            update_rsvp(site_slug, rsvp, mark_as_attended)
+          end
+        end
       end
       member_ids.length
     end
@@ -87,6 +95,16 @@ module IdentityNationBuilder
       rsvp_data = { person_id: person['id'] }
       rsvp_data[:attended] = true if attended
       api(:events, :rsvp_create, { id: event_id, site_slug: site_slug, rsvp: rsvp_data })
+    end
+
+    def self.update_rsvp(site_slug, rsvp, mark_as_attended)
+      api(:events, :rsvp_update, {
+        person_id: rsvp['person_id'],
+        rsvp_id: rsvp['id'],
+        event_id: rsvp['event_id'],
+        site_slug: site_slug,
+        attended: mark_as_attended
+      })
     end
 
     def self.person(people_id)
