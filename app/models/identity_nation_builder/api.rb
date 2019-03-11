@@ -2,9 +2,9 @@ require 'nationbuilder'
 
 module IdentityNationBuilder
   class API
-    def self.rsvp(site_slug, members, event_id)
+    def self.rsvp(site_slug, members, event_id, mark_as_attended=false)
       member_ids = members.map do |member|
-        rsvp_person(site_slug, event_id, find_or_create_person(member))
+        rsvp_person(site_slug, event_id, find_or_create_person(member), mark_as_attended)
       end
       member_ids.length
     end
@@ -83,8 +83,10 @@ module IdentityNationBuilder
       person ? person : upsert_person(member)
     end
 
-    def self.rsvp_person(site_slug, event_id, person)
-      api(:events, :rsvp_create, { id: event_id, site_slug: site_slug, rsvp: { person_id: person['id'] } })
+    def self.rsvp_person(site_slug, event_id, person, attended=false)
+      rsvp_data = { person_id: person['id'] }
+      rsvp_data[:attended] = true if attended
+      api(:events, :rsvp_create, { id: event_id, site_slug: site_slug, rsvp: rsvp_data })
     end
 
     def self.person(people_id)

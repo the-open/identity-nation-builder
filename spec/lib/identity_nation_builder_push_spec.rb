@@ -5,14 +5,14 @@ describe IdentityNationBuilder do
     context 'with valid parameters' do
       context 'with rsvp' do
         it 'returns correct sync item type' do
-          external_system_params = {'sync_type' => 'rsvp', 'event_id' => 1}
-          expect(IdentityNationBuilder.sync_type_item(external_system_params)).to eq(1)
+          external_system_params = {'sync_type' => 'rsvp', 'event_id' => 1, 'mark_as_attended' => true}
+          expect(IdentityNationBuilder.sync_type_item(external_system_params)).to eq([1, true])
         end
       end
       context 'with tag' do
         it 'returns correct sync item type' do
           external_system_params = {'sync_type' => 'tag', 'tag' => 'test_tag'}
-          expect(IdentityNationBuilder.sync_type_item(external_system_params)).to eq('test_tag')
+          expect(IdentityNationBuilder.sync_type_item(external_system_params)).to eq(['test_tag'])
         end
       end
     end
@@ -35,7 +35,7 @@ describe IdentityNationBuilder do
     context 'event rsvp' do
       context 'with valid parameters' do
         it 'yeilds members_with_emails' do
-          external_system_params = JSON.generate({'sync_type' => 'rsvp', 'event_id' => 1})
+          external_system_params = JSON.generate({'sync_type' => 'rsvp', 'event_id' => 1, 'mark_as_attended' => true})
           IdentityNationBuilder.push(@sync_id, @members, external_system_params) do |members_with_emails, campaign_name|
             expect(members_with_emails.count).to eq(3)
           end
@@ -64,8 +64,8 @@ describe IdentityNationBuilder do
     context 'event rsvp' do
       context 'with valid parameters' do
         it 'yeilds write_result_count' do
-          external_system_params = JSON.generate({'sync_type' => 'rsvp', 'event_id' => 1})
-          expect(IdentityNationBuilder::API).to receive(:rsvp).exactly(1).times.with(anything, anything, anything) { 2 }
+          external_system_params = JSON.generate({'sync_type' => 'rsvp', 'event_id' => 1, 'mark_as_attended' => true})
+          expect(IdentityNationBuilder::API).to receive(:rsvp).exactly(1).times.with(anything, anything, 1, true) { 2 }
           IdentityNationBuilder.push_in_batches(1, @members, external_system_params) do |batch_index, write_result_count|
             expect(write_result_count).to eq(2)
           end

@@ -172,5 +172,28 @@ describe IdentityNationBuilder::API do
         expect(tag_request).to have_been_requested
       end
     end
+
+    describe '.rsvp' do
+      let!(:member) { { id: 1, mobile: '04000000000'} }
+      let!(:event_id) { 1 }
+      let!(:mark_as_attended) { true }
+
+      it 'should call the api with correct options' do
+        people_match_endpoint = stub_request(:get, %r{people/match})
+          .to_return {
+            {
+              status: 200,
+              headers: { 'Content-Type' => 'application/json' },
+              body: { person: member }.to_json
+            }
+          }
+        rsvp_request = stub_request(:post, %r{/sites/test/pages/events/1/rsvps})
+          .with(body: hash_including(rsvp: { person_id: 1, attended: true}))
+          .to_return(status: 200)
+        IdentityNationBuilder::API.rsvp('test', [member], event_id, mark_as_attended)
+        expect(people_match_endpoint).to have_been_requested
+        expect(rsvp_request).to have_been_requested
+      end
+    end
   end
 end

@@ -26,7 +26,7 @@ module IdentityNationBuilder
           batch_members,
           serializer: NationBuilderMemberSyncPushSerializer
         ).as_json
-        write_result_count = IdentityNationBuilder::API.send(sync_type, site_slug, rows, sync_type_item(external_system_params_hash))
+        write_result_count = IdentityNationBuilder::API.send(sync_type, site_slug, rows, *sync_type_item(external_system_params_hash))
 
         yield batch_index, write_result_count
       end
@@ -38,15 +38,15 @@ module IdentityNationBuilder
   def self.sync_type_item(external_system_params_hash)
     case external_system_params_hash['sync_type']
     when 'rsvp'
-      external_system_params_hash['event_id']
+      [external_system_params_hash['event_id'], external_system_params_hash['mark_as_attended']]
     when 'tag'
-      external_system_params_hash['tag']
+      [external_system_params_hash['tag']]
     end
   end
 
   def self.description(external_system_params, contact_campaign_name)
     external_system_params_hash = JSON.parse(external_system_params)
-    "#{SYSTEM_NAME.titleize} - #{external_system_params_hash['sync_type'].titleize}: ##{sync_type_item(external_system_params_hash)} (#{CONTACT_TYPE[external_system_params_hash['sync_type']]})"
+    "#{SYSTEM_NAME.titleize} - #{external_system_params_hash['sync_type'].titleize}: ##{sync_type_item(external_system_params_hash)[0]} (#{CONTACT_TYPE[external_system_params_hash['sync_type']]})"
   end
 
   def self.worker_currenly_running?(method_name)
