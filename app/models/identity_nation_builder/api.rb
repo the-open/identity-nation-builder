@@ -99,11 +99,10 @@ module IdentityNationBuilder
 
     def self.update_rsvp(site_slug, rsvp, mark_as_attended)
       api(:events, :rsvp_update, {
-        person_id: rsvp['person_id'],
         rsvp_id: rsvp['id'],
         event_id: rsvp['event_id'],
         site_slug: site_slug,
-        attended: mark_as_attended
+        rsvp: { attended: mark_as_attended, person_id: rsvp['person_id'] }
       })
     end
 
