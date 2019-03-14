@@ -83,6 +83,8 @@ module IdentityNationBuilder
 
     spacing = updated_events.count == 1 ? 0 : 30.minutes / (updated_events.count - 1)
 
+    started_at = Time.now()
+
     updated_events.each_with_index do |nb_event, index|
 
       event = Event.find_or_initialize_by(
@@ -105,9 +107,11 @@ module IdentityNationBuilder
         data: nb_event
       )
 
-      self.delay(retry: true, queue: 'low', run_at: (spacing * index).since.to_i).fetch_new_event_rsvps(event.id)
+      fetch_new_event_rsvps(event.id)
     end
 
+    finished_at = Time.now()
+    puts "Nationbuilder API: fetch_new_events timer: #{finished_at - started_at}" if Settings.nation_builder.debug
     updated_events.size
   end
 

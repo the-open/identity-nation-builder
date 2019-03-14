@@ -16,17 +16,6 @@ describe IdentityNationBuilder do
       IdentityNationBuilder::API.stub_chain(:sites_events) { events_response["results"] }
     end
 
-    it 'should schedule the jobs over 30 minutes' do
-      IdentityNationBuilder.fetch_new_events
-
-      jobs_in_queue = Sidekiq::Extensions::DelayedClass.jobs
-      expect(jobs_in_queue.size).to eq(events_response["results"].size)
-
-      first_job_to_run_at = Time.at(jobs_in_queue[0]["run_at"])
-      second_job_to_run_at = Time.at(jobs_in_queue[1]["run_at"])
-      expect(second_job_to_run_at - first_job_to_run_at).to eq(30.minutes)
-    end
-
     context 'with SideKiq inline' do
       before(:each) do
         IdentityNationBuilder::API.stub_chain(:all_event_rsvps) { event_rsvp_response["results"] }
@@ -95,10 +84,12 @@ describe IdentityNationBuilder do
 
     context 'with an event without an address' do
       it 'should use the event name as the location' do
+        allow(IdentityNationBuilder).to receive(:fetch_new_event_rsvps).and_return(event_rsvp_response)
         Sidekiq::Testing.fake!
         events_without_venue_address = events_response['results']
         events_without_venue_address.first['venue'].delete('address')
         IdentityNationBuilder::API.stub(:sites_events).and_return(events_without_venue_address)
+
         IdentityNationBuilder.fetch_new_events
         event = Event.first
         expect(event.location).to include(events_without_venue_address.first['venue']['name'])
