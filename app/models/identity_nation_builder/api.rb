@@ -51,7 +51,7 @@ module IdentityNationBuilder
     def self.all_events(site_slugs, starting)
       event_results = []
       site_slugs.each do |site_slug|
-        page = NationBuilder::Paginator.new(get_api_client(retries: 8), events(site_slug, starting))
+        page = NationBuilder::Paginator.new(get_api_client, events(site_slug, starting))
         page_results = page.body['results'].map { |result| result['site_slug'] = site_slug; result }
         event_results = event_results + page_results
         loop do
@@ -65,12 +65,12 @@ module IdentityNationBuilder
     end
 
     def self.events(site_slug, starting)
-      api(:events, :index, { site_slug: site_slug, starting: starting.strftime("%F"), per_page: 100 }){ get_api_client(retries: 8) }
+      api(:events, :index, { site_slug: site_slug, starting: starting.strftime("%F"), per_page: 100 })
     end
 
     def self.all_event_rsvps(site_slug, event_id)
       event_rsvp_results = []
-      page = NationBuilder::Paginator.new(get_api_client(retries: 8), event_rsvps(site_slug, event_id))
+      page = NationBuilder::Paginator.new(get_api_client, event_rsvps(site_slug, event_id))
       page_results = page.body['results']
       event_rsvp_results = event_rsvp_results + page_results
       loop do
@@ -83,7 +83,7 @@ module IdentityNationBuilder
     end
 
     def self.event_rsvps(site_slug, event_id)
-      api(:events, :rsvps, { site_slug: site_slug, id: event_id, per_page: 100 }){ get_api_client(retries: 8) }
+      api(:events, :rsvps, { site_slug: site_slug, id: event_id, per_page: 100 })
     end
 
     def self.find_or_create_person(member)
@@ -107,7 +107,7 @@ module IdentityNationBuilder
     end
 
     def self.person(people_id)
-      api(:people, :show, { id: people_id }){ get_api_client(retries: 8) }["person"]
+      api(:people, :show, { id: people_id })["person"]
     end
 
     def self.all_lists
@@ -187,7 +187,7 @@ module IdentityNationBuilder
       args.third[:fire_webhooks] = false
       started_at = DateTime.now
       begin
-        payload = (block_given? ? yield : get_api_client).call(*args)
+        payload = get_api_client.call(*args)
         raise_if_empty_payload payload
       rescue NationBuilder::RateLimitedError
         raise
@@ -202,8 +202,8 @@ module IdentityNationBuilder
       payload
     end
 
-    def self.get_api_client(retries: 0)
-      NationBuilder::Client.new Settings.nation_builder.site, Settings.nation_builder.token, retries: retries
+    def self.get_api_client
+      NationBuilder::Client.new Settings.nation_builder.site, Settings.nation_builder.token, retries: 8
     end
 
     def self.payload_has_a_no_match_code?(payload)
