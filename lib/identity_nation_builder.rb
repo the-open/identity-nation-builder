@@ -81,8 +81,6 @@ module IdentityNationBuilder
     starting_from = (DateTime.now() - over_period_of_time)
     updated_events = IdentityNationBuilder::API.sites_events(starting_from)
 
-    spacing = updated_events.count == 1 ? 0 : 30.minutes / (updated_events.count - 1)
-
     started_at = Time.now()
 
     updated_events.each_with_index do |nb_event, index|
