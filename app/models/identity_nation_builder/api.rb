@@ -36,6 +36,7 @@ module IdentityNationBuilder
       rsvps_on_date.each do |rsvp|
         update_rsvp(site_slug, rsvp.data, true)
       end
+      rsvps_on_date.length
     end
 
     def self.sites
