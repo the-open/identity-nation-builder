@@ -5,7 +5,7 @@ module IdentityNationBuilder
   PULL_BATCH_AMOUNT = 100
   PUSH_BATCH_AMOUNT = 100
   SYNCING = 'members'
-  CONTACT_TYPE = {'rsvp' => 'event', 'tag' => 'list'}
+  CONTACT_TYPE = {'rsvp' => 'event', 'tag' => 'list', 'mark_as_attended_to_all_events_on_date' => ' mark as attended'}
   PULL_JOBS = [[:fetch_new_events, 1.hours]]
 
   def self.push(sync_id, members, external_system_params)
@@ -41,6 +41,8 @@ module IdentityNationBuilder
       [external_system_params_hash['event_id'], external_system_params_hash['mark_as_attended']]
     when 'tag'
       [external_system_params_hash['tag']]
+    when 'mark_as_attended_to_all_events_on_date'
+      [Date.current]
     end
   end
 

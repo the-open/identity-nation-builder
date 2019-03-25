@@ -246,5 +246,30 @@ describe IdentityNationBuilder::API do
         end
       end
     end
+
+    describe '.mark_as_attended_to_all_events_on_date' do
+      let!(:nb_event_data) { { "id": 1, "event_id": 2, "person_id": 3 } }
+      let!(:member) { FactoryBot.create(:member) }
+      let!(:member_data) { { id: member.id } }
+      let!(:event) { Event.create!(external_id: 2, start_time: Time.now) }
+      let!(:old_event) { Event.create!(external_id: 2, start_time: 5.days.ago) }
+      let!(:event_rsvp) { EventRsvp.create!(event: event, member: member, attended: false, data: nb_event_data) }
+      let!(:old_nb_event_data) { { "id": 8, "event_id": 9, "person_id": 3 } }
+      let!(:old_rsvp) { EventRsvp.create!(event: old_event, member: member, attended: false, data: nb_event_data) }
+
+      it 'should mark the member as attened to any events on the specified date' do
+        rsvp_update_request = stub_request(:put, %r{pages/events/2/rsvps/1})
+          .with(body: /"attended":true.*"person_id":3/)
+          .to_return({
+            status: 200,
+            headers: { 'Content-Type' => 'application/json' },
+            body: {
+              rsvp: { id: 1, event_id: 2, person_id: 3, attended: false }
+            }.to_json
+          })
+        IdentityNationBuilder::API.mark_as_attended_to_all_events_on_date('test', [member_data], Time.zone.now.beginning_of_day)
+        expect(rsvp_update_request).to have_been_requested
+      end
+    end
   end
 end

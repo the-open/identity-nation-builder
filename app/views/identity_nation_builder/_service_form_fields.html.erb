@@ -1,14 +1,14 @@
 <div class="form-group">
   <%= label_tag "services[nation_builder]" do %>
-    <p>Push this list to NationBuilder <span class="push_to_list_type">Event RSVP</span></p>
+    <p>Push this list to NationBuilder <span class="push_to_list_type"></span></p>
     <%= check_box_tag "services[nation_builder]", "on", false, {:id => "services_nation_builder", :class => "js-toggle-select"} %>
     Yes
   <% end %>
   <div class="js-toggle-input" style="display: none;">
     <%= label_tag "nation_builder[sync_type]", 'Sync Type: ' %>
-    <%= select_tag "nation_builder[sync_type]", options_for_select(IdentityNationBuilder::ApplicationHelper.push_types_for_select) %>
+    <%= select_tag "nation_builder[sync_type]", options_for_select(IdentityNationBuilder::ApplicationHelper.push_types_for_select), include_blank: true %>
     <br/>
-    <div class="event_rsvp_container">
+    <div class="event_rsvp_container nationbuilder_container">
       <%= label_tag "nation_builder[site_slug]", 'Site: ' %>
       <%= select_tag "nation_builder[site_slug]", options_for_select(IdentityNationBuilder::ApplicationHelper.sites_for_select) %>
       <br/>
@@ -18,9 +18,11 @@
       <%= label_tag "nation_builder[mark_as_attended]", 'Mark as attended: ' %>
       <%= check_box_tag "nation_builder[mark_as_attended]", true, false %>
     </div>
-    <div class="tag_container">
+    <div class="tag_container nationbuilder_container">
       <%= label_tag "nation_builder[tag]", 'Tag Name: ' %>
       <%= text_field_tag "nation_builder[tag]", nil, {:placeholder => 'Tag Name'} %>
+    </div>
+    <div class="mark_as_attended_to_all_events_on_date_container nationbuilder_container">
     </div>
   </div>
   <hr />
@@ -31,19 +33,31 @@
     show_selected_sync_type()
   });
   function show_selected_sync_type(){
-    if($("#nation_builder_sync_type").val()==="rsvp"){
-      $(".push_to_list_type").html("Event RSVP")
+    if ($("#nation_builder_sync_type").val() === "rsvp") {
+      $(".push_to_list_type").html("and RSVP")
       $(".event_rsvp_container").show()
       $(".event_rsvp_container select").prop("disabled", false)
+      $(".mark_as_attended_to_all_events_on_date_container").hide()
       $(".tag_container").hide()
       $(".tag_container input").prop("disabled", true)
-    }
-    else{
+    } else if ($("#nation_builder_sync_type").val() === "mark_as_attended_to_all_events_on_date") {
+      $(".push_to_list_type").html("and mark all as attended to events today")
+      $(".mark_as_attended_to_all_events_on_date_container").show()
+      $(".tag_container").hide()
+      $(".tag_container input").prop("disabled", true)
       $(".event_rsvp_container").hide()
-      $(".push_to_list_type").html("Tagged List")
+      $(".event_rsvp_container select").prop("disabled", true)
+    } else if ($("#nation_builder_sync_type").val() === "tag"){
+      $(".push_to_list_type").html("and tag")
+      $(".event_rsvp_container").hide()
       $(".event_rsvp_container select").prop("disabled", true)
       $(".tag_container").show()
       $(".tag_container input").prop("disabled", false)
+      $(".mark_as_attended_to_all_events_on_date_container").hide()
+    } else {
+      $(".push_to_list_type").html('')
+      $(".nationbuilder_container").hide()
+      $(".nationbuilder_container select, .nationbuilder_container input").prop('disabled', true)
     }
   }
   show_selected_sync_type()

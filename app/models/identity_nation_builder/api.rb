@@ -27,6 +27,17 @@ module IdentityNationBuilder
       member_ids.length
     end
 
+    def self.mark_as_attended_to_all_events_on_date(site_slug, members, date)
+      member_ids = members.map { |member| member[:id] }
+      rsvps_on_date = EventRsvp.where(member_id: member_ids)
+                                .joins(:event)
+                                .where(Event.arel_table[:start_time].gteq(date))
+                                .where(attended: false)
+      rsvps_on_date.each do |rsvp|
+        update_rsvp(site_slug, rsvp.data, true)
+      end
+    end
+
     def self.sites
       api(:sites, :index, { per_page: 100 })['results']
     end
