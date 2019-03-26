@@ -28,15 +28,21 @@ module IdentityNationBuilder
     end
 
     def self.mark_as_attended_to_all_events_on_date(site_slug, members, date)
+      marked_records = 0
       member_ids = members.map { |member| member[:id] }
       rsvps_on_date = EventRsvp.where(member_id: member_ids)
                                 .joins(:event)
                                 .where('events.start_time::date = ?', date)
                                 .where(attended: false)
       rsvps_on_date.each do |rsvp|
-        update_rsvp(site_slug, rsvp.data, true)
+        begin
+          update_rsvp(site_slug, rsvp.data, true)
+          marked_records += 1
+        rescue NationBuilder::ClientError => response
+          raise unless response.message =~ /Record not found/i
+        end
       end
-      rsvps_on_date.length
+      marked_records
     end
 
     def self.sites

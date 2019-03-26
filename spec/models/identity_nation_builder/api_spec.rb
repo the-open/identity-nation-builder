@@ -270,7 +270,23 @@ describe IdentityNationBuilder::API do
               rsvp: { id: 1, event_id: 2, person_id: 3, attended: false }
             }.to_json
           })
-        IdentityNationBuilder::API.mark_as_attended_to_all_events_on_date('test', [member_data], Time.zone.now.beginning_of_day)
+        result = IdentityNationBuilder::API.mark_as_attended_to_all_events_on_date('test', [member_data], Time.zone.now.beginning_of_day)
+        expect(result).to eq(1)
+        expect(rsvp_update_request).to have_been_requested
+      end
+
+      it 'should skip rsvps that 404' do
+        rsvp_update_request = stub_request(:put, %r{pages/events/2/rsvps/1})
+          .with(body: /"attended":true.*"person_id":3/)
+          .to_return({
+            status: 404,
+            headers: { 'Content-Type' => 'application/json' },
+            body: {
+              "code":"not_found", "message":"Record not found"
+            }.to_json
+          })
+        result = IdentityNationBuilder::API.mark_as_attended_to_all_events_on_date('test', [member_data], Time.zone.now.beginning_of_day)
+        expect(result).to eq(0)
         expect(rsvp_update_request).to have_been_requested
       end
     end

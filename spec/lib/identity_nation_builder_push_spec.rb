@@ -15,6 +15,13 @@ describe IdentityNationBuilder do
           expect(IdentityNationBuilder.sync_type_item(external_system_params)).to eq(['test_tag'])
         end
       end
+
+      context 'with mark_as_attended_to_all_events_on_date' do
+        it 'returns correct sync item type' do
+          external_system_params = {'sync_type' => 'mark_as_attended_to_all_events_on_date', 'site_slug' => 'action'}
+          expect(IdentityNationBuilder.sync_type_item(external_system_params)).to eq([Date.current])
+        end
+      end
     end
     context 'with invalid parameters' do
       it 'returns no sync item type' do
