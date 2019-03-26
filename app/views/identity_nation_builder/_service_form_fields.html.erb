@@ -8,10 +8,12 @@
     <%= label_tag "nation_builder[sync_type]", 'Sync Type: ' %>
     <%= select_tag "nation_builder[sync_type]", options_for_select(IdentityNationBuilder::ApplicationHelper.push_types_for_select), include_blank: true %>
     <br/>
-    <div class="event_rsvp_container nationbuilder_container">
+    <div class="site_slug_container nationbuilder_container">
       <%= label_tag "nation_builder[site_slug]", 'Site: ' %>
       <%= select_tag "nation_builder[site_slug]", options_for_select(IdentityNationBuilder::ApplicationHelper.sites_for_select) %>
       <br/>
+    </div>
+    <div class="event_rsvp_container nationbuilder_container">
       <%= label_tag "nation_builder[event_id]", 'Event ID: ' %>
       <%= select_tag "nation_builder[event_id]", options_for_select(IdentityNationBuilder::ApplicationHelper.events_for_select), { style: 'width:100%;' } %>
       <br/>
@@ -36,12 +38,14 @@
     if ($("#nation_builder_sync_type").val() === "rsvp") {
       $(".push_to_list_type").html("and RSVP")
       $(".event_rsvp_container").show()
+      $(".site_slug_container").show()
       $(".event_rsvp_container select").prop("disabled", false)
       $(".mark_as_attended_to_all_events_on_date_container").hide()
       $(".tag_container").hide()
       $(".tag_container input").prop("disabled", true)
     } else if ($("#nation_builder_sync_type").val() === "mark_as_attended_to_all_events_on_date") {
       $(".push_to_list_type").html("and mark all as attended to events today")
+      $(".site_slug_container").show()
       $(".mark_as_attended_to_all_events_on_date_container").show()
       $(".tag_container").hide()
       $(".tag_container input").prop("disabled", true)
@@ -50,7 +54,8 @@
     } else if ($("#nation_builder_sync_type").val() === "tag"){
       $(".push_to_list_type").html("and tag")
       $(".event_rsvp_container").hide()
-      $(".event_rsvp_container select").prop("disabled", true)
+      $(".site_slug_container").hide()
+      $(".event_rsvp_container select, .site_slug_container select").prop("disabled", true)
       $(".tag_container").show()
       $(".tag_container input").prop("disabled", false)
       $(".mark_as_attended_to_all_events_on_date_container").hide()
