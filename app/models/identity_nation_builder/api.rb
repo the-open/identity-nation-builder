@@ -31,7 +31,7 @@ module IdentityNationBuilder
       member_ids = members.map { |member| member[:id] }
       rsvps_on_date = EventRsvp.where(member_id: member_ids)
                                 .joins(:event)
-                                .where(Event.arel_table[:start_time].gteq(date))
+                                .where('events.start_time::date = ?', date)
                                 .where(attended: false)
       rsvps_on_date.each do |rsvp|
         update_rsvp(site_slug, rsvp.data, true)

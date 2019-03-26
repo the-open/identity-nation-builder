@@ -252,10 +252,13 @@ describe IdentityNationBuilder::API do
       let!(:member) { FactoryBot.create(:member) }
       let!(:member_data) { { id: member.id } }
       let!(:event) { Event.create!(external_id: 2, start_time: Time.now) }
-      let!(:old_event) { Event.create!(external_id: 2, start_time: 5.days.ago) }
       let!(:event_rsvp) { EventRsvp.create!(event: event, member: member, attended: false, data: nb_event_data) }
+      let!(:old_event) { Event.create!(external_id: 2, start_time: 5.days.ago) }
       let!(:old_nb_event_data) { { "id": 8, "event_id": 9, "person_id": 3 } }
       let!(:old_rsvp) { EventRsvp.create!(event: old_event, member: member, attended: false, data: nb_event_data) }
+      let!(:future_event) { Event.create!(external_id: 2, start_time: 1.days.since) }
+      let!(:future_nb_event_data) { { "id": 12, "event_id": 19, "person_id": 3 } }
+      let!(:future_rsvp) { EventRsvp.create!(event: future_event, member: member, attended: false, data: nb_event_data) }
 
       it 'should mark the member as attened to any events on the specified date' do
         rsvp_update_request = stub_request(:put, %r{pages/events/2/rsvps/1})
