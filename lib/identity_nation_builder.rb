@@ -42,7 +42,7 @@ module IdentityNationBuilder
     when 'tag'
       [external_system_params_hash['tag']]
     when 'mark_as_attended_to_all_events_on_date'
-      [Date.current]
+      []
     end
   end
 

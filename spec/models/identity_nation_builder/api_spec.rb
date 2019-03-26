@@ -270,7 +270,7 @@ describe IdentityNationBuilder::API do
               rsvp: { id: 1, event_id: 2, person_id: 3, attended: false }
             }.to_json
           })
-        result = IdentityNationBuilder::API.mark_as_attended_to_all_events_on_date('test', [member_data], Time.zone.now.beginning_of_day)
+        result = IdentityNationBuilder::API.mark_as_attended_to_all_events_on_date('test', [member_data])
         expect(result).to eq(1)
         expect(rsvp_update_request).to have_been_requested
       end
@@ -285,7 +285,7 @@ describe IdentityNationBuilder::API do
               "code":"not_found", "message":"Record not found"
             }.to_json
           })
-        result = IdentityNationBuilder::API.mark_as_attended_to_all_events_on_date(nil, [member_data], Time.zone.now.beginning_of_day)
+        result = IdentityNationBuilder::API.mark_as_attended_to_all_events_on_date(nil, [member_data])
         expect(result).to eq(0)
         expect(rsvp_update_request).to have_been_requested
       end

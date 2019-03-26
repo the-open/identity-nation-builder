@@ -27,12 +27,12 @@ module IdentityNationBuilder
       member_ids.length
     end
 
-    def self.mark_as_attended_to_all_events_on_date(site_slug, members, date)
+    def self.mark_as_attended_to_all_events_on_date(site_slug, members)
       marked_records = 0
       member_ids = members.map { |member| member[:id] }
       rsvps_on_date = EventRsvp.where(member_id: member_ids)
                                 .joins(:event)
-                                .where('events.start_time::date = ?', date)
+                                .where('events.start_time::date = ?', Date.current)
                                 .where(attended: false)
       rsvps_on_date.each do |rsvp|
         begin
