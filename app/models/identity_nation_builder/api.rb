@@ -36,7 +36,7 @@ module IdentityNationBuilder
                                 .where(attended: false)
       rsvps_on_date.each do |rsvp|
         begin
-          update_rsvp(site_slug, rsvp.data, true)
+          update_rsvp(rsvp.event.data['site_slug'], rsvp.data, true)
           marked_records += 1
         rescue NationBuilder::ClientError => response
           raise unless response.message =~ /Record not found/i

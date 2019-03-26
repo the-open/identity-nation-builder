@@ -251,7 +251,7 @@ describe IdentityNationBuilder::API do
       let!(:nb_event_data) { { "id": 1, "event_id": 2, "person_id": 3 } }
       let!(:member) { FactoryBot.create(:member) }
       let!(:member_data) { { id: member.id } }
-      let!(:event) { Event.create!(external_id: 2, start_time: Time.now) }
+      let!(:event) { Event.create!(external_id: 2, start_time: Time.now, data: { 'site_slug': 'test_slug' }) }
       let!(:event_rsvp) { EventRsvp.create!(event: event, member: member, attended: false, data: nb_event_data) }
       let!(:old_event) { Event.create!(external_id: 2, start_time: 5.days.ago) }
       let!(:old_nb_event_data) { { "id": 8, "event_id": 9, "person_id": 3 } }
@@ -261,7 +261,7 @@ describe IdentityNationBuilder::API do
       let!(:future_rsvp) { EventRsvp.create!(event: future_event, member: member, attended: false, data: nb_event_data) }
 
       it 'should mark the member as attened to any events on the specified date' do
-        rsvp_update_request = stub_request(:put, %r{pages/events/2/rsvps/1})
+        rsvp_update_request = stub_request(:put, %r{sites/test_slug/pages/events/2/rsvps/1})
           .with(body: /"attended":true.*"person_id":3/)
           .to_return({
             status: 200,
@@ -285,7 +285,7 @@ describe IdentityNationBuilder::API do
               "code":"not_found", "message":"Record not found"
             }.to_json
           })
-        result = IdentityNationBuilder::API.mark_as_attended_to_all_events_on_date('test', [member_data], Time.zone.now.beginning_of_day)
+        result = IdentityNationBuilder::API.mark_as_attended_to_all_events_on_date(nil, [member_data], Time.zone.now.beginning_of_day)
         expect(result).to eq(0)
         expect(rsvp_update_request).to have_been_requested
       end
