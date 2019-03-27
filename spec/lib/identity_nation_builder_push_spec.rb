@@ -90,6 +90,18 @@ describe IdentityNationBuilder do
         end
       end
     end
+
+    context 'mark_as_attended_to_all_events_on_date' do
+      context 'with valid parameters' do
+        it 'yeilds write_result_count' do
+          external_system_params = JSON.generate({'sync_type' => 'mark_as_attended_to_all_events_on_date'})
+          expect(IdentityNationBuilder::API).to receive(:mark_as_attended_to_all_events_on_date).exactly(1).times.with(nil, instance_of(@members.class)) { 2 }
+          IdentityNationBuilder.push_in_batches(1, @members, external_system_params) do |batch_index, write_result_count|
+            expect(write_result_count).to eq(2)
+          end
+        end
+      end
+    end
   end
 
   describe '#attempt_to_rsvp_person_twice' do

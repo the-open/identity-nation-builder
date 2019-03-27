@@ -22,10 +22,14 @@ module IdentityNationBuilder
         external_system_params_hash = JSON.parse(external_system_params)
         sync_type = external_system_params_hash['sync_type']
         site_slug = external_system_params_hash['site_slug']
-        rows = ActiveModel::Serializer::CollectionSerializer.new(
-          batch_members,
-          serializer: NationBuilderMemberSyncPushSerializer
-        ).as_json
+        if sync_type == 'mark_as_attended_to_all_events_on_date'
+          rows = batch_members
+        else
+          rows = ActiveModel::Serializer::CollectionSerializer.new(
+            batch_members,
+            serializer: NationBuilderMemberSyncPushSerializer
+          ).as_json
+        end
         write_result_count = IdentityNationBuilder::API.send(sync_type, site_slug, rows, *sync_type_item(external_system_params_hash))
 
         yield batch_index, write_result_count
