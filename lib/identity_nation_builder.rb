@@ -108,11 +108,18 @@ module IdentityNationBuilder
         max_attendees: nb_event['capacity'],
         approved: nb_event['status'] == 'published',
         invite_only: !nb_event['rsvp_form']['allow_guests'],
-        data: nb_event
+        data: nb_event,
+        updated_at: Time.now
       )
 
       fetch_new_event_rsvps(event.id)
     end
+
+    # Set data->status to removed for any event not returned by the api
+    Event.where(system: SYSTEM_NAME)
+         .where('start_time > ?', starting_from)
+         .where('updated_at < ?', started_at - 5.seconds)
+         .update_all("data = jsonb_set((case when jsonb_typeof(data::jsonb) <> 'object' then '{}' else data end)::jsonb, '{status}', '\"removed\"')")
 
     finished_at = Time.now()
     puts "Nationbuilder API: fetch_new_events timer: #{finished_at - started_at}" if Settings.nation_builder.debug

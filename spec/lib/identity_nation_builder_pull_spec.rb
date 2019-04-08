@@ -20,9 +20,6 @@ describe IdentityNationBuilder do
       before(:each) do
         IdentityNationBuilder::API.stub_chain(:all_event_rsvps) { event_rsvp_response["results"] }
         IdentityNationBuilder::API.stub_chain(:person) { person_response["person"] }
-
-        IdentityNationBuilder::API.should_receive(:all_event_rsvps).exactly(2).times.with(anything, anything)
-        IdentityNationBuilder::API.should_receive(:person).exactly(6).times.with(anything)
       end
 
       before(:all) do
@@ -36,6 +33,12 @@ describe IdentityNationBuilder do
       it 'should fetch the new events and insert them' do
         IdentityNationBuilder.fetch_new_events
         expect(Event.count).to eq(2)
+      end
+
+      it 'should call the api' do
+        IdentityNationBuilder::API.should_receive(:all_event_rsvps).exactly(2).times.with(anything, anything)
+        IdentityNationBuilder::API.should_receive(:person).exactly(6).times.with(anything)
+        IdentityNationBuilder.fetch_new_events
       end
 
       it 'should record all event details' do
@@ -55,6 +58,32 @@ describe IdentityNationBuilder do
           invite_only: !nb_event['rsvp_form']['allow_guests'],
           data: nb_event
         )
+      end
+
+      context 'with an existing event updated in the past' do
+        it 'should update the updated_at even if the values have not changed' do
+          IdentityNationBuilder.fetch_new_events
+          Event.update_all(updated_at: 3.days.ago)
+          IdentityNationBuilder.fetch_new_events
+          expect(Event.first.updated_at.to_date).to eq(Date.today)
+        end
+      end
+
+      context 'with an existing event that is in the time period but not returned by the api' do
+        let!(:removed_event){ Event.create!(
+          system: IdentityNationBuilder::SYSTEM_NAME,
+          subsystem: 'action',
+          start_time: Time.now,
+          updated_at: 4.days.ago,
+          id: 9999,
+          data: { status: 'published' }
+        )}
+
+        it 'should set the the removed_at within the data field' do
+          IdentityNationBuilder.fetch_new_events
+          removed_event.reload
+          expect(removed_event.data['status']).to eq('removed')
+        end
       end
 
       it 'should fetch people and upsert members' do
