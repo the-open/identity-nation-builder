@@ -2,10 +2,10 @@ require 'nationbuilder'
 
 module IdentityNationBuilder
   class API
-    def self.rsvp(site_slug, members, event_id, mark_as_attended=false)
+    def self.rsvp(site_slug, members, event_id, mark_as_attended=false, recruiter_id=nil)
       member_ids = members.map do |member|
         person = find_or_create_person(member)
-        response = rsvp_person(site_slug, event_id, person, mark_as_attended)
+        response = rsvp_person(site_slug, event_id, person, mark_as_attended, recruiter_id)
         if person && !response.try(:[], 'rsvp') && mark_as_attended
           pager = NationBuilder::Paginator.new(get_api_client, event_rsvps(site_slug, event_id))
           rsvp = pager.body['results'].select { |result| result['person_id'] == person['id'] }.first
@@ -109,9 +109,10 @@ module IdentityNationBuilder
       person ? person : upsert_person(member)
     end
 
-    def self.rsvp_person(site_slug, event_id, person, attended=false)
+    def self.rsvp_person(site_slug, event_id, person, attended=false, recruiter_id=nil)
       rsvp_data = { person_id: person['id'] }
       rsvp_data[:attended] = true if attended
+      rsvp_data[:recruiter_id] = recruiter_id if recruiter_id
       api(:events, :rsvp_create, { id: event_id, site_slug: site_slug, rsvp: rsvp_data })
     end
 
@@ -158,6 +159,18 @@ module IdentityNationBuilder
 
     def self.tag_list(list_id, tag)
       api(:lists, :add_tag, { list_id: list_id, tag: URI.escape(tag) })
+    end
+
+    def self.recruiters
+      recruiters = api(:people_tags, :people, { tag: 'recruiter' })['results'].map{|org|
+        [ org['last_name'], org['id'] ]
+      }.sort
+      Sidekiq.redis { |r| r.set 'nationbuilder:recruiters', recruiters.to_json}
+      recruiters
+    end
+
+    def self.cached_recruiters
+      list_from_cache('nationbuilder:recruiters')
     end
 
     private

@@ -9,5 +9,9 @@ module IdentityNationBuilder
     def self.sites_for_select
       IdentityNationBuilder::API.cached_sites.map { |x| ["#{x['name']}", x['slug']] }
     end
+
+    def self.recruiters
+      IdentityNationBuilder::API.cached_recruiters
+    end
   end
 end

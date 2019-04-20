@@ -17,6 +17,11 @@
       <br/>
       <%= label_tag "nation_builder[mark_as_attended]", 'Mark as attended: ' %>
       <%= check_box_tag "nation_builder[mark_as_attended]", true, false %>
+      <% if recruiters = IdentityNationBuilder::ApplicationHelper.recruiters %>
+        <br/>
+        <%= label_tag "nation_builder[recruiter_id]", 'Recruitment method: ' %>
+        <%= select_tag "nation_builder[recruiter_id]", options_for_select(recruiters), { style: 'width:100%;' } %>
+      <% end %>
     </div>
     <div class="tag_container nationbuilder_container">
       <%= label_tag "nation_builder[tag]", 'Tag Name: ' %>

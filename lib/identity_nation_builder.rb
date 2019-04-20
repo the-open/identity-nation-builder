@@ -6,7 +6,7 @@ module IdentityNationBuilder
   PUSH_BATCH_AMOUNT = 100
   SYNCING = 'members'
   CONTACT_TYPE = {'rsvp' => 'event', 'tag' => 'list', 'mark_as_attended_to_all_events_on_date' => ' mark as attended'}
-  PULL_JOBS = [[:fetch_new_events, 1.hours]]
+  PULL_JOBS = [[:fetch_new_events, 1.hours], [:fetch_recruiters, 1.hours]]
 
   def self.push(sync_id, members, external_system_params)
     begin
@@ -42,7 +42,7 @@ module IdentityNationBuilder
   def self.sync_type_item(external_system_params_hash)
     case external_system_params_hash['sync_type']
     when 'rsvp'
-      [external_system_params_hash['event_id'], external_system_params_hash['mark_as_attended']]
+      [external_system_params_hash['event_id'], external_system_params_hash['mark_as_attended'], external_system_params_hash['recruiter_id']]
     when 'tag'
       [external_system_params_hash['tag']]
     when 'mark_as_attended_to_all_events_on_date'
@@ -164,6 +164,10 @@ module IdentityNationBuilder
         sleep 10
       end
     end
+  end
+
+  def self.fetch_recruiters
+    IdentityNationBuilder::API.recruiters
   end
 
   def self.event_address_full(nb_event)

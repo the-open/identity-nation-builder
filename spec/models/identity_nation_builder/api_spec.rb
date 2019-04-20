@@ -177,6 +177,7 @@ describe IdentityNationBuilder::API do
       let!(:member) { { id: 1, mobile: '04000000000'} }
       let!(:event_id) { 1 }
       let!(:mark_as_attended) { true }
+      let!(:recruiter_id) { 3 }
 
       context 'with no existing rsvp' do
         it 'should call the rsvp/create endpoint with attended set' do
@@ -189,13 +190,13 @@ describe IdentityNationBuilder::API do
               }
             }
           rsvp_request = stub_request(:post, %r{/sites/test/pages/events/1/rsvps})
-            .with(body: hash_including(rsvp: { person_id: 1, attended: true}))
+            .with(body: hash_including(rsvp: { person_id: 1, attended: true, recruiter_id: recruiter_id}))
             .to_return({
               status: 200,
               headers: { 'Content-Type' => 'application/json' },
               body: { rsvp: { person_id: 1, attended: true }}.to_json
             })
-          IdentityNationBuilder::API.rsvp('test', [member], event_id, mark_as_attended)
+          IdentityNationBuilder::API.rsvp('test', [member], event_id, mark_as_attended, recruiter_id)
           expect(people_match_endpoint).to have_been_requested
           expect(rsvp_request).to have_been_requested
         end
@@ -289,6 +290,33 @@ describe IdentityNationBuilder::API do
         expect(result).to eq(0)
         expect(rsvp_update_request).to have_been_requested
       end
+    end
+  end
+
+  describe '.recruiters' do
+    let!(:organisations) { [ { id: 1, last_name: 'Recruiter 1' }, { id: 2, last_name: 'Recruiter 2' } ] }
+    let!(:tags_endpoint) {
+      stub_request(:get, %r{tags/recruiter/people})
+        .to_return { |request|
+          {
+            status: 200,
+            headers: { 'Content-Type' => 'application/json' },
+            body: { results: organisations }.to_json
+          }
+        }
+    }
+
+    it 'should return a list of organisations tagged as recruiter' do
+      recruiters = IdentityNationBuilder::API.recruiters
+      expect(tags_endpoint).to have_been_requested
+      expect(recruiters.length).to eq(2)
+      expect(recruiters[0].first).to eq('Recruiter 1')
+      expect(recruiters[0].last).to eq(1)
+    end
+
+    it 'should cache the recruiters' do
+      recruiters = IdentityNationBuilder::API.recruiters
+      expect(IdentityNationBuilder::API.cached_recruiters).to eq(recruiters)
     end
   end
 end
