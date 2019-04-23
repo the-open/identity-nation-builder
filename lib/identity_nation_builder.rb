@@ -199,7 +199,7 @@ module IdentityNationBuilder
 
     recruiters = IdentityNationBuilder::API.recruiters
     Sidekiq.redis { |r| r.set 'nationbuilder:recruiters', recruiters.to_json}
-    yield recruiters.size, recruiters.pluck(:id), { }, false
+    yield recruiters.size, recruiters, { }, false
   end
 
   def self.event_address_full(nb_event)
