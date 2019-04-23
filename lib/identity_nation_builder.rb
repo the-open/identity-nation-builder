@@ -50,9 +50,13 @@ module IdentityNationBuilder
     end
   end
 
-  def self.description(external_system_params, contact_campaign_name)
+  def self.description(sync_type, external_system_params, contact_campaign_name)
     external_system_params_hash = JSON.parse(external_system_params)
-    "#{SYSTEM_NAME.titleize} - #{external_system_params_hash['sync_type'].titleize}: ##{sync_type_item(external_system_params_hash)[0]} (#{CONTACT_TYPE[external_system_params_hash['sync_type']]})"
+    if sync_type === 'push'
+      "#{SYSTEM_NAME.titleize} - #{external_system_params_hash['sync_type'].titleize}: ##{sync_type_item(external_system_params_hash)[0]} (#{CONTACT_TYPE[external_system_params_hash['sync_type']]})"
+    else
+      "#{SYSTEM_NAME.titleize}: #{external_system_params_hash['pull_job']}"
+    end
   end
 
   def self.worker_currenly_running?(method_name)
@@ -80,9 +84,21 @@ module IdentityNationBuilder
     defined?(PULL_JOBS) && PULL_JOBS.is_a?(Array) ? PULL_JOBS : []
   end
 
-  def self.fetch_new_events(over_period_of_time=1.month)
+  def self.pull(sync_id, external_system_params)
+    begin
+      pull_job = JSON.parse(external_system_params)['pull_job'].to_s
+      self.send(pull_job, sync_id) do |records_for_import_count, records_for_import, records_for_import_scope, pull_deferred|
+        yield records_for_import_count, records_for_import, records_for_import_scope, pull_deferred
+      end
+    rescue => e
+      raise e
+    end
+  end
+
+  def self.fetch_new_events(sync_id, over_period_of_time=1.month)
+    audit_data = {sync_id: sync_id}
     ## Do not run method if another worker is currently processing this method
-    return if self.worker_currenly_running?(__method__.to_s)
+    yield 0, {}, {}, true if self.worker_currenly_running?(__method__.to_s)
 
     starting_from = (DateTime.now() - over_period_of_time)
     updated_events = IdentityNationBuilder::API.sites_events(starting_from)
@@ -97,7 +113,9 @@ module IdentityNationBuilder
         external_id: nb_event["id"]
       )
 
-      event.update_attributes!(
+      event.audit_data = audit_data
+
+      event.update!(
         name: nb_event['name'],
         start_time: nb_event['start_time'] && DateTime.parse(nb_event['start_time']),
         end_time: nb_event['end_date'] && DateTime.parse(nb_event['end_date']),
@@ -112,7 +130,7 @@ module IdentityNationBuilder
         updated_at: Time.now
       )
 
-      fetch_new_event_rsvps(event.id)
+      fetch_new_event_rsvps(sync_id, event.id)
     end
 
     # Set data->status to removed for any event not returned by the api
@@ -123,13 +141,16 @@ module IdentityNationBuilder
 
     finished_at = Time.now()
     puts "Nationbuilder API: fetch_new_events timer: #{finished_at - started_at}" if Settings.nation_builder.debug
-    updated_events.size
+
+    yield updated_events.size, updated_events.pluck(:id), { }, false
   end
 
-  def self.fetch_new_event_rsvps(event_id)
+  def self.fetch_new_event_rsvps(sync_id, event_id)
+    audit_data = {sync_id: sync_id}
     event = Event.find(event_id)
     event_rsvps = IdentityNationBuilder::API.all_event_rsvps(event.subsystem, event.external_id)
-    event.update_attributes!(
+    event.audit_data = audit_data
+    event.update!(
       attendees: event_rsvps.count
     )
 
@@ -143,19 +164,26 @@ module IdentityNationBuilder
           emails: [{ email: person['email'] }],
           phones: ['mobile', 'phone'].map{|number_type| person[number_type] }.compact.map{|phone| { phone: phone } }
         },
-        "#{SYSTEM_NAME}:#{__method__.to_s}"
+        "#{SYSTEM_NAME}:#{__method__.to_s}",
+        audit_data,
+        false,
+        false
       )
       if member
-        member_external_id = MemberExternalId.find_or_create_by!(
+        member_external_id = MemberExternalId.find_or_initialize_by(
           member: member,
           system: SYSTEM_NAME,
           external_id: person['id']
         )
+        member_external_id.audit_data = audit_data
+        member_external_id.save! if member_external_id.new_record?
+
         event_rsvp = EventRsvp.find_or_initialize_by(
           event_id: event.id,
           member_id: member.id
         )
-        event_rsvp.update_attributes!(
+        event_rsvp.audit_data = audit_data
+        event_rsvp.update!(
           attended: nb_event_rsvp['attended'],
           data: nb_event_rsvp
         )
@@ -166,8 +194,12 @@ module IdentityNationBuilder
     end
   end
 
-  def self.fetch_recruiters
-    IdentityNationBuilder::API.recruiters
+  def self.fetch_recruiters(sync_id)
+    yield 0, {}, {}, true if self.worker_currenly_running?(__method__.to_s)
+
+    recruiters = IdentityNationBuilder::API.recruiters
+    Sidekiq.redis { |r| r.set 'nationbuilder:recruiters', recruiters.to_json}
+    yield recruiters.size, recruiters.pluck(:id), { }, false
   end
 
   def self.event_address_full(nb_event)

@@ -165,7 +165,6 @@ module IdentityNationBuilder
       recruiters = api(:people_tags, :people, { tag: 'recruiter' })['results'].map{|org|
         [ org['last_name'], org['id'] ]
       }.sort
-      Sidekiq.redis { |r| r.set 'nationbuilder:recruiters', recruiters.to_json}
       recruiters
     end
 

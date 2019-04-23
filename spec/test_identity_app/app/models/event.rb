@@ -1,4 +1,5 @@
 class Event < ApplicationRecord
+  attr_accessor :audit_data
   has_many :event_rsvps
   has_many :members, through: :event_rsvps
 

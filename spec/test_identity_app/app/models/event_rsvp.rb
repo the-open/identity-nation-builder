@@ -1,4 +1,5 @@
 class EventRsvp < ApplicationRecord
+  attr_accessor :audit_data
   belongs_to :event
   belongs_to :member
 

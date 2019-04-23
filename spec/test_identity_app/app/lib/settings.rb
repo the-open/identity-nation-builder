@@ -21,5 +21,8 @@ class Settings
   end
 
   def self.options
+    return {
+      "ignore_name_change_for_donation" => true
+    }
   end
 end

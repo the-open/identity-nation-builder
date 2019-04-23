@@ -1,7 +1,22 @@
 require 'rails_helper'
 
 describe IdentityNationBuilder do
-  context 'fetching new events' do
+  context '#pull' do
+    before(:each) do
+      clean_external_database
+      @sync_id = 1
+      @external_system_params = JSON.generate({'pull_job' => 'fetch_new_events'})
+    end
+
+    context 'with valid parameters' do
+      it 'should call the corresponding method'  do
+        expect(IdentityNationBuilder).to receive(:fetch_new_events).exactly(1).times.with(1)
+        IdentityNationBuilder.pull(@sync_id, @external_system_params)
+      end
+    end
+  end
+
+  context '#fetch_new_events' do
     let!(:events_response){ JSON.parse(File.read("spec/fixtures/events_response.json")) }
     let!(:event_rsvp_response){ JSON.parse(File.read("spec/fixtures/event_rsvp_response.json")) }
     let!(:person_response){ JSON.parse(File.read("spec/fixtures/person_response.json")) }
@@ -31,18 +46,18 @@ describe IdentityNationBuilder do
       end
 
       it 'should fetch the new events and insert them' do
-        IdentityNationBuilder.fetch_new_events
+        IdentityNationBuilder.fetch_new_events(@sync_id) {}
         expect(Event.count).to eq(2)
       end
 
       it 'should call the api' do
         IdentityNationBuilder::API.should_receive(:all_event_rsvps).exactly(2).times.with(anything, anything)
         IdentityNationBuilder::API.should_receive(:person).exactly(6).times.with(anything)
-        IdentityNationBuilder.fetch_new_events
+        IdentityNationBuilder.fetch_new_events(@sync_id) {}
       end
 
       it 'should record all event details' do
-        IdentityNationBuilder.fetch_new_events
+        IdentityNationBuilder.fetch_new_events(@sync_id) {}
         nb_event = events_response["results"][0]
         event_location = IdentityNationBuilder.event_address_full(nb_event)
         expect(Event.first).to have_attributes(
@@ -62,9 +77,9 @@ describe IdentityNationBuilder do
 
       context 'with an existing event updated in the past' do
         it 'should update the updated_at even if the values have not changed' do
-          IdentityNationBuilder.fetch_new_events
+          IdentityNationBuilder.fetch_new_events(@sync_id) {}
           Event.update_all(updated_at: 3.days.ago)
-          IdentityNationBuilder.fetch_new_events
+          IdentityNationBuilder.fetch_new_events(@sync_id) {}
           expect(Event.first.updated_at.to_date).to eq(Date.today)
         end
       end
@@ -80,19 +95,19 @@ describe IdentityNationBuilder do
         )}
 
         it 'should set the the removed_at within the data field' do
-          IdentityNationBuilder.fetch_new_events
+          IdentityNationBuilder.fetch_new_events(@sync_id) {}
           removed_event.reload
           expect(removed_event.data['status']).to eq('removed')
         end
       end
 
       it 'should fetch people and upsert members' do
-        IdentityNationBuilder.fetch_new_events
+        IdentityNationBuilder.fetch_new_events(@sync_id) {}
         expect(Member.count).to eq(1)
       end
 
       it 'should record member details' do
-        IdentityNationBuilder.fetch_new_events
+        IdentityNationBuilder.fetch_new_events(@sync_id) {}
         expect(Member.last).to have_attributes(
           first_name: person_response['person']['first_name'],
           last_name: person_response['person']['last_name'],
@@ -102,7 +117,7 @@ describe IdentityNationBuilder do
       end
 
       it 'should fetch the new event rsvps and insert them' do
-        IdentityNationBuilder.fetch_new_events
+        IdentityNationBuilder.fetch_new_events(@sync_id) {}
         expect(EventRsvp.count).to eq(2)
         event = Event.where(external_id: 1).first
         event_rsvp = EventRsvp.where(event_id: event.id).first
@@ -119,7 +134,7 @@ describe IdentityNationBuilder do
         events_without_venue_address.first['venue'].delete('address')
         IdentityNationBuilder::API.stub(:sites_events).and_return(events_without_venue_address)
 
-        IdentityNationBuilder.fetch_new_events
+        IdentityNationBuilder.fetch_new_events(@sync_id) {}
         event = Event.first
         expect(event.location).to include(events_without_venue_address.first['venue']['name'])
         expect(event.latitude).to be_nil
@@ -160,7 +175,7 @@ describe IdentityNationBuilder do
 
       it 'should record details of member who only has a mobile number' do
         mobile_last_three_digits = person_mobileonly_response['person']['mobile'].from(-3)
-        IdentityNationBuilder.fetch_new_events
+        IdentityNationBuilder.fetch_new_events(@sync_id) {}
         expect(Member.last).to have_attributes(
           first_name: person_mobileonly_response['person']['first_name'],
           last_name: person_mobileonly_response['person']['last_name'],

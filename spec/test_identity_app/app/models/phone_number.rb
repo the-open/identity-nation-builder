@@ -1,5 +1,6 @@
 class PhoneNumber < ApplicationRecord
   include ReadWriteIdentity
+  attr_accessor :audit_data
 
   before_save :infer_phone_type
 
