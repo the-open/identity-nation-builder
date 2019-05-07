@@ -4,6 +4,7 @@ module IdentityNationBuilder
   class API
     def self.rsvp(site_slug, members, event_id, mark_as_attended=false, recruiter_id=nil)
       member_ids = members.map do |member|
+        member = member.except(:id, :nationbuilder_id)
         person = find_or_create_person(member)
         response = rsvp_person(site_slug, event_id, person, mark_as_attended, recruiter_id)
         if person && !response.try(:[], 'rsvp') && mark_as_attended
@@ -14,17 +15,20 @@ module IdentityNationBuilder
           end
         end
       end
-      member_ids.length
+      yield member_ids.length, member_ids
     end
 
     def self.tag(site_slug, members, tag)
       list_id = create_list(tag)['id']
       member_ids = members.map do |member|
-        find_or_create_person(member)['id']
+        identity_id = member[:id]
+        member = member.except(:id, :nationbuilder_id)
+        { identity_id: identity_id, nationbuilder_id: find_or_create_person(member)['id'] }
       end
-      add_people_list(list_id, member_ids)
+      nationbuilder_ids = member_ids.map { |member| member[:nationbuilder_id] }
+      add_people_list(list_id, nationbuilder_ids)
       tag_list(list_id, tag)
-      member_ids.length
+      yield member_ids.length, member_ids
     end
 
     def self.mark_as_attended_to_all_events_on_date(site_slug, members)
@@ -42,7 +46,7 @@ module IdentityNationBuilder
           raise unless response.message =~ /Record not found/i
         end
       end
-      marked_records
+      yield marked_records, member_ids
     end
 
     def self.sites

@@ -1,6 +1,13 @@
 module IdentityNationBuilder
   class NationBuilderMemberSyncPushSerializer < ActiveModel::Serializer
-    attributes :email, :phone, :mobile, :first_name, :last_name
+    attributes :id, :nationbuilder_id, :email, :phone, :mobile, :first_name, :last_name
+
+    def nationbuilder_id
+      member_external_ids = member_external_ids ? member_external_ids.with_system('nation_builder') : nil
+      member_external_id = member_external_ids ? member_external_ids.first : nil
+      nationbuilder_id = member_external_ids ? member_external_id.external_id : nil
+      nationbuilder_id
+    end
 
     def phone
       strip_country_code(@object.landline)

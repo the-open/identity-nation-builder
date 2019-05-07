@@ -72,7 +72,7 @@ describe IdentityNationBuilder do
       context 'with valid parameters' do
         it 'yeilds write_result_count' do
           external_system_params = JSON.generate({'sync_type' => 'rsvp', 'event_id' => 1, 'mark_as_attended' => true})
-          expect(IdentityNationBuilder::API).to receive(:rsvp).exactly(1).times.with(anything, anything, 1, true) { 2 }
+          expect(IdentityNationBuilder::API).to receive(:rsvp).exactly(1).times.with(anything, anything, 1, true, nil) { 2 }
           IdentityNationBuilder.push_in_batches(1, @members, external_system_params) do |batch_index, write_result_count|
             expect(write_result_count).to eq(2)
           end

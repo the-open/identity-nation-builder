@@ -30,9 +30,16 @@ module IdentityNationBuilder
             serializer: NationBuilderMemberSyncPushSerializer
           ).as_json
         end
-        write_result_count = IdentityNationBuilder::API.send(sync_type, site_slug, rows, *sync_type_item(external_system_params_hash))
+        IdentityNationBuilder::API.send(sync_type, site_slug, rows, *sync_type_item(external_system_params_hash)) do |write_result_count, member_ids|
+          if sync_type === 'tag'
+            member_ids.each do |member_id|
+              member = Member.find(member_id[:identity_id])
+              member.update_external_id(SYSTEM_NAME, member_id[:nationbuilder_id], {sync_id: sync_id}) if member
+            end
+          end
 
-        yield batch_index, write_result_count
+          yield batch_index, write_result_count
+        end
       end
     rescue => e
       raise e
@@ -142,7 +149,12 @@ module IdentityNationBuilder
     finished_at = Time.now()
     puts "Nationbuilder API: fetch_new_events timer: #{finished_at - started_at}" if Settings.nation_builder.debug
 
-    yield updated_events.size, updated_events.pluck(:id), { }, false
+    yield(
+      updated_events.size,
+      updated_events.pluck(:id),
+      {},
+      false
+    )
   end
 
   def self.fetch_new_event_rsvps(sync_id, event_id)
@@ -199,7 +211,12 @@ module IdentityNationBuilder
 
     recruiters = IdentityNationBuilder::API.recruiters
     Sidekiq.redis { |r| r.set 'nationbuilder:recruiters', recruiters.to_json}
-    yield recruiters.size, recruiters, { }, false
+    yield(
+      recruiters.size,
+      recruiters,
+      {},
+      false
+    )
   end
 
   def self.event_address_full(nb_event)
