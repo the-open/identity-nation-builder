@@ -112,6 +112,7 @@ module IdentityNationBuilder
 
     started_at = Time.now()
 
+    updated_events_ids = updated_events.map { |nb_event| nb_event["id"] }
     updated_events.each_with_index do |nb_event, index|
 
       event = Event.find_or_initialize_by(
@@ -151,7 +152,7 @@ module IdentityNationBuilder
 
     yield(
       updated_events.size,
-      updated_events.pluck(:id),
+      updated_events_ids,
       {},
       false
     )
