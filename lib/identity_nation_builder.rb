@@ -102,7 +102,7 @@ module IdentityNationBuilder
     end
   end
 
-  def self.fetch_new_events(sync_id, over_period_of_time=1.month)
+  def self.fetch_new_events(sync_id, over_period_of_time=1.week)
     audit_data = {sync_id: sync_id}
     ## Do not run method if another worker is currently processing this method
     yield 0, {}, {}, true if self.worker_currenly_running?(__method__.to_s)
@@ -110,8 +110,7 @@ module IdentityNationBuilder
     starting_from = (DateTime.now() - over_period_of_time)
     updated_events = IdentityNationBuilder::API.sites_events(starting_from)
 
-    started_at = Time.now()
-
+    started_at = DateTime.now()
     updated_events_ids = updated_events.map { |nb_event| nb_event["id"] }
     updated_events.each_with_index do |nb_event, index|
 
@@ -147,13 +146,17 @@ module IdentityNationBuilder
          .where('updated_at < ?', started_at - 5.seconds)
          .update_all("data = jsonb_set((case when jsonb_typeof(data::jsonb) <> 'object' then '{}' else data end)::jsonb, '{status}', '\"removed\"')")
 
-    finished_at = Time.now()
-    puts "Nationbuilder API: fetch_new_events timer: #{finished_at - started_at}" if Settings.nation_builder.debug
-
+    execution_time_seconds = ((DateTime.now - started_at) * 24 * 60 * 60).to_i
     yield(
       updated_events.size,
       updated_events_ids,
-      {},
+      {
+        scope: 'nation_builder:events:start_time',
+        scope_limit: over_period_of_time,
+        started_at: started_at,
+        completed_at: DateTime.now,
+        execution_time_seconds: execution_time_seconds
+      },
       false
     )
   end
@@ -183,14 +186,7 @@ module IdentityNationBuilder
         false
       )
       if member
-        member_external_id = MemberExternalId.find_or_initialize_by(
-          member: member,
-          system: SYSTEM_NAME,
-          external_id: person['id']
-        )
-        member_external_id.audit_data = audit_data
-        member_external_id.save! if member_external_id.new_record?
-
+        member.update_external_id(SYSTEM_NAME, person['id'], audit_data)
         event_rsvp = EventRsvp.find_or_initialize_by(
           event_id: event.id,
           member_id: member.id
