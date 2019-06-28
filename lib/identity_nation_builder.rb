@@ -7,10 +7,11 @@ module IdentityNationBuilder
   SYNCING = 'members'
   CONTACT_TYPE = {'rsvp' => 'event', 'tag' => 'list', 'mark_as_attended_to_all_events_on_date' => ' mark as attended'}
   PULL_JOBS = [[:fetch_new_events, 1.hours], [:fetch_recruiters, 1.hours]]
+  MEMBER_RECORD_DATA_TYPE='object'
 
   def self.push(sync_id, members, external_system_params)
     begin
-      yield members, nil
+      yield members, nil, external_system_params
     rescue => e
       raise e
     end
@@ -89,6 +90,10 @@ module IdentityNationBuilder
 
   def self.get_pull_jobs
     defined?(PULL_JOBS) && PULL_JOBS.is_a?(Array) ? PULL_JOBS : []
+  end
+
+  def self.get_push_jobs
+    defined?(PUSH_JOBS) && PUSH_JOBS.is_a?(Array) ? PUSH_JOBS : []
   end
 
   def self.pull(sync_id, external_system_params)
