@@ -108,7 +108,6 @@ module IdentityNationBuilder
   end
 
   def self.fetch_new_events(sync_id, over_period_of_time=1.week)
-    audit_data = {sync_id: sync_id}
     ## Do not run method if another worker is currently processing this method
     yield 0, {}, {}, true if self.worker_currenly_running?(__method__.to_s)
 
@@ -124,8 +123,6 @@ module IdentityNationBuilder
         subsystem: nb_event["site_slug"],
         external_id: nb_event["id"]
       )
-
-      event.audit_data = audit_data
 
       event.update!(
         name: nb_event['name'],
@@ -167,17 +164,15 @@ module IdentityNationBuilder
   end
 
   def self.fetch_new_event_rsvps(sync_id, event_id)
-    audit_data = {sync_id: sync_id}
     event = Event.find(event_id)
     event_rsvps = IdentityNationBuilder::API.all_event_rsvps(event.subsystem, event.external_id)
-    event.audit_data = audit_data
     event.update!(
       attendees: event_rsvps.count
     )
 
     event_rsvps.each_with_index do |nb_event_rsvp, index|
       person = IdentityNationBuilder::API.person(nb_event_rsvp['person_id'])
-      member = Member.upsert_member(
+      member = UpsertMember.call(
         {
           firstname: person['first_name'],
           lastname: person['last_name'],
@@ -185,18 +180,15 @@ module IdentityNationBuilder
           emails: [{ email: person['email'] }],
           phones: ['mobile', 'phone'].map{|number_type| person[number_type] }.compact.map{|phone| { phone: phone } }
         },
-        "#{SYSTEM_NAME}:#{__method__.to_s}",
-        audit_data,
-        false,
-        false
+        entry_point: "#{SYSTEM_NAME}:#{__method__.to_s}",
+        ignore_name_change: false
       )
       if member
-        member.update_external_id(SYSTEM_NAME, person['id'], audit_data)
+        member.update_external_id(SYSTEM_NAME, person['id'])
         event_rsvp = EventRsvp.find_or_initialize_by(
           event_id: event.id,
           member_id: member.id
         )
-        event_rsvp.audit_data = audit_data
         event_rsvp.update!(
           attended: nb_event_rsvp['attended'],
           data: nb_event_rsvp
