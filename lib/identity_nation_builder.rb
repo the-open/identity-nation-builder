@@ -2,8 +2,6 @@ require "identity_nation_builder/engine"
 
 module IdentityNationBuilder
   SYSTEM_NAME = 'nation_builder'
-  PULL_BATCH_AMOUNT = 100
-  PUSH_BATCH_AMOUNT = 100
   SYNCING = 'members'
   CONTACT_TYPE = {'rsvp' => 'event', 'tag' => 'list', 'mark_as_attended_to_all_events_on_date' => ' mark as attended'}
   PULL_JOBS = [[:fetch_new_events, 1.hours], [:fetch_recruiters, 1.hours]]
@@ -20,7 +18,7 @@ module IdentityNationBuilder
 
   def self.push_in_batches(sync_id, members, external_system_params)
     begin
-      members.in_batches(of: get_push_batch_amount).each_with_index do |batch_members, batch_index|
+      members.in_batches(of: Settings.nation_builder.push_batch_amount).each_with_index do |batch_members, batch_index|
         external_system_params_hash = JSON.parse(external_system_params)
         sync_type = external_system_params_hash['sync_type']
         site_slug = external_system_params_hash['site_slug']
@@ -79,14 +77,6 @@ module IdentityNationBuilder
     end
     puts ">>> #{SYSTEM_NAME.titleize} #{method_name} running ..."
     return false
-  end
-
-  def self.get_pull_batch_amount
-    Settings.nation_builder.pull_batch_amount || PULL_BATCH_AMOUNT
-  end
-
-  def self.get_push_batch_amount
-    Settings.nation_builder.push_batch_amount || PUSH_BATCH_AMOUNT
   end
 
   def self.get_pull_jobs

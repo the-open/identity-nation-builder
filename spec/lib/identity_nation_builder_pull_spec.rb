@@ -142,22 +142,6 @@ describe IdentityNationBuilder do
       end
     end
 
-    context '#get_pull_batch_amount' do
-      context 'with no settings parameters set' do
-        it 'should return default class constant' do
-          expect(IdentityNationBuilder.get_pull_batch_amount).to eq(100)
-        end
-      end
-      context 'with settings parameters set' do
-        before(:each) do
-          Settings.stub_chain(:nation_builder, :pull_batch_amount) { 10 }
-        end
-        it 'should return set variable' do
-          expect(IdentityNationBuilder.get_pull_batch_amount).to eq(10)
-        end
-      end
-    end
-
     context 'person with mobile only' do
       before(:all) do
         Sidekiq::Testing.inline!
