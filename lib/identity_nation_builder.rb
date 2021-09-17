@@ -10,7 +10,7 @@ module IdentityNationBuilder
   def self.push(sync_id, member_ids, external_system_params)
     begin
       members = Member.where(id: member_ids)
-      yield members, nil
+      yield members, nil, external_system_params
     rescue => e
       raise e
     end
